@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Practice Speaking — English Aloud</title>
+  <meta name="description" content="A minimalist English-speaking practice teleprompter with background lofi music, vocabulary translations, and pace tracking.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="site-wrapper">
+
+    <!-- Top Navigation / Minimal Header -->
+    <header class="site-header" id="site-header">
+      <a href="#topics" class="site-brand" id="nav-brand">English Aloud</a>
+      <nav class="site-nav">
+        <button type="button" class="nav-text-btn" id="nav-words-btn">
+          Saved words (<span id="saved-words-count">0</span>)
+        </button>
+      </nav>
+    </header>
+
+    <!-- SCREEN 1: Topics Selection -->
+    <main class="screen-view active" id="screen-topics" aria-label="Topic selection screen">
+      <div class="container">
+        <header class="section-intro">
+          <h1 class="screen-title">Speaking Practice</h1>
+          <p class="screen-desc">Select a topic below. Read each sentence aloud as it rolls upward, finding your natural rhythm and clarity.</p>
+        </header>
+
+        <ul class="topic-index" id="topics-list" role="list">
+          <!-- Dynamically populated from data.js -->
+        </ul>
+      </div>
+    </main>
+
+    <!-- SCREEN 2: Prepare Screen -->
+    <main class="screen-view" id="screen-prepare" aria-label="Preparation screen">
+      <div class="container narrow">
+        <nav class="screen-nav">
+          <button type="button" class="nav-text-btn" id="prepare-back-btn">Back to topics</button>
+        </nav>
+
+        <header class="prepare-heading">
+          <span class="topic-kicker" id="prepare-topic-number">01</span>
+          <h1 class="prepare-title" id="prepare-topic-title">Daily Routine</h1>
+          <p class="prepare-sub" id="prepare-word-count">160 words &middot; Everyday English</p>
+        </header>
+
+        <section class="prepare-block" aria-labelledby="heading-keywords">
+          <h2 class="block-title" id="heading-keywords">Key words &amp; Uzbek translations</h2>
+          <div class="keyword-pairs" id="prepare-glossary-list">
+            <!-- Keyword + Uzbek translation items -->
+          </div>
+        </section>
+
+        <section class="prepare-block" aria-labelledby="heading-pace">
+          <div class="pace-header-row">
+            <h2 class="block-title" id="heading-pace">Reading pace</h2>
+            <span class="pace-current-value"><span id="prepare-wpm-val">130</span> WPM</span>
+          </div>
+          <div class="pace-slider-wrapper">
+            <span class="pace-slider-bound">60</span>
+            <input type="range" id="prepare-speed-slider" class="minimal-slider" min="60" max="260" step="5" value="130" aria-label="Reading pace in words per minute">
+            <span class="pace-slider-bound">260 max</span>
+          </div>
+        </section>
+
+        <div class="prepare-submit">
+          <button type="button" class="action-bold" id="start-reading-btn">Begin reading</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- SCREEN 3: Reading Teleprompter Screen -->
+    <main class="screen-view" id="screen-reading" aria-label="Teleprompter reading screen">
+      <!-- Fixed Reading Header (Minimalist top nav: clean back link only) -->
+      <header class="reading-bar" id="reading-bar">
+        <button type="button" class="nav-text-btn reading-back-btn" id="reading-back-btn">
+          <span class="nav-back-full">&larr; Back to topics</span>
+          <span class="nav-back-short">&larr; Back</span>
+        </button>
+      </header>
+
+      <!-- Eye Focus Horizontal Guide Line -->
+      <div class="reading-focus-guide" aria-hidden="true">
+        <div class="focus-guide-inner">
+          <span class="focus-marker-line focus-marker-left"></span>
+          <span class="focus-guide-wire"></span>
+          <span class="focus-marker-line focus-marker-right"></span>
+        </div>
+      </div>
+
+      <!-- 3-2-1 Countdown Overlay -->
+      <div class="countdown-overlay hidden" id="countdown-overlay" aria-live="assertive" aria-atomic="true">
+        <div class="countdown-digit" id="countdown-digit">3</div>
+        <div class="countdown-prompt" id="countdown-prompt">Get ready to speak</div>
+      </div>
+
+      <!-- Teleprompter Viewport -->
+      <div class="teleprompter-stage" id="teleprompter-stage" tabindex="0" role="region" aria-label="Teleprompter scroll area">
+        <div class="teleprompter-flow" id="teleprompter-flow">
+          <!-- Text sentences and glossary words -->
+        </div>
+      </div>
+
+      <!-- Translation Panel Near Clicked Word -->
+      <div class="floating-translation hidden" id="word-panel" role="dialog" aria-labelledby="panel-word-en" aria-modal="false">
+        <div class="panel-inner">
+          <div class="panel-words">
+            <span class="panel-word-en" id="panel-word-en">word</span>
+            <span class="panel-word-uz" id="panel-word-uz">tarjima</span>
+          </div>
+          <div class="panel-actions">
+            <button type="button" class="panel-btn" id="panel-listen-btn">Listen</button>
+            <button type="button" class="panel-btn" id="panel-save-btn">Save</button>
+            <button type="button" class="panel-btn" id="panel-close-btn">Keep going</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reading Controls Bottom Bar (All controls, speed slider & audio at bottom) -->
+      <footer class="reading-footer" id="reading-footer">
+        <div class="reading-footer-inner">
+          <div class="reading-footer-actions">
+            <button type="button" class="footer-btn" id="reading-toggle-btn">Hold on</button>
+            <button type="button" class="footer-btn" id="reading-restart-btn">Start over</button>
+          </div>
+          <div class="reading-sliders-group" id="reading-sliders-group">
+            <div class="reading-pace-control">
+              <label for="reading-speed-slider" class="volume-label">Speed <span id="reading-wpm-val">130</span></label>
+              <input type="range" id="reading-speed-slider" class="minimal-slider pace-slider" min="60" max="260" step="5" value="130" aria-label="Reading pace in words per minute">
+            </div>
+            <div class="reading-volume">
+              <label for="music-volume" class="volume-label">Music</label>
+              <input type="range" id="music-volume" class="volume-slider" min="0" max="1" step="0.01" value="0.5" aria-label="Music volume">
+            </div>
+            <span class="reading-rec-indicator hidden" id="reading-rec-indicator" title="Voice recording active">Rec</span>
+          </div>
+        </div>
+      </footer>
+    </main>
+
+    <!-- SCREEN 4: Finish Screen -->
+    <main class="screen-view" id="screen-finish" aria-label="Reading completion summary">
+      <div class="container narrow">
+        <header class="finish-heading">
+          <span class="topic-kicker">Completed</span>
+          <h1 class="finish-title" id="finish-topic-title">Daily Routine</h1>
+          <p class="finish-sub">Text completed. Review your speaking pace and explored vocabulary.</p>
+        </header>
+
+        <section class="finish-stats" aria-label="Speaking performance metrics">
+          <div class="stat-cell">
+            <span class="stat-number" id="finish-reading-time">1m 15s</span>
+            <span class="stat-desc">Speaking time</span>
+          </div>
+          <div class="stat-cell">
+            <span class="stat-number" id="finish-wpm">132 WPM</span>
+            <span class="stat-desc">Calculated pace</span>
+          </div>
+          <div class="stat-cell">
+            <span class="stat-number" id="finish-tapped-count">2</span>
+            <span class="stat-desc">Hard words explored</span>
+          </div>
+        </section>
+
+        <!-- Audio Recording Playback Section (Max 3 stored in localStorage) -->
+        <section class="finish-recording-block" id="finish-recording-block" aria-label="Speaking voice recordings">
+          <div class="recording-header">
+            <span class="recording-label">Your voice recordings</span>
+            <span class="recording-counter" id="recording-counter">0 of 3 stored</span>
+          </div>
+          <p class="recording-note">Saved in local storage (max 3 audios &middot; oldest is replaced automatically).</p>
+          <div class="recordings-list" id="recordings-list">
+            <!-- Dynamically populated list of up to 3 recordings -->
+          </div>
+          <audio id="finish-audio-player" class="hidden" preload="metadata"></audio>
+        </section>
+
+        <div class="personal-best-note hidden" id="finish-best-note">
+          New personal best pace for this topic.
+        </div>
+
+        <nav class="finish-nav" aria-label="Next steps">
+          <button type="button" class="action-bold" id="finish-retry-btn">Once more</button>
+          <button type="button" class="nav-text-btn" id="finish-next-btn">Next topic</button>
+          <button type="button" class="nav-text-btn" id="finish-topics-btn">Back to topics</button>
+        </nav>
+      </div>
+    </main>
+
+    <!-- SCREEN 5: My Words Screen -->
+    <main class="screen-view" id="screen-words" aria-label="Saved vocabulary list">
+      <div class="container narrow">
+        <nav class="screen-nav">
+          <button type="button" class="nav-text-btn" id="words-back-btn">Back to topics</button>
+        </nav>
+
+        <header class="section-intro">
+          <h1 class="screen-title">Saved Words</h1>
+          <p class="screen-desc" id="words-count-desc">Words you flagged during speaking practice.</p>
+        </header>
+
+        <div class="saved-vocabulary" id="saved-words-container">
+          <!-- Dynamic word rows -->
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- Audio Elements -->
+  <audio id="lofi-audio" src="assets/lofi.mp3" loop preload="auto"></audio>
+  <audio id="intro-audio" src="assets/intro.mp3" preload="auto"></audio>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
