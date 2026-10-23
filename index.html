@@ -28,12 +28,9 @@
         <button type="button" class="nav-text-btn" id="nav-words-btn">
           Saved words (<span id="saved-words-count">0</span>)
         </button>
-        <!-- Listening Extra Nav Actions -->
-        <button type="button" class="nav-text-btn hidden" id="historyBtn" title="Natijalar tarixi">
-          Natijalar tarixi
-        </button>
-        <button type="button" class="nav-text-btn hidden" id="themeToggleBtn" title="Mavzuni almashtirish" style="font-size: 1.1rem; padding: 0 4px;">
-          <span id="themeIcon">🌙</span>
+        <!-- Listening Extra Nav Action -->
+        <button type="button" class="nav-text-btn hidden" id="historyBtn" title="Results history">
+          History
         </button>
       </nav>
     </header>
@@ -235,7 +232,7 @@
           <div class="listening-intro-header">
             <div>
               <h1 class="screen-title">Listening Practice</h1>
-              <p class="screen-desc">Audio tinglang, tabiiy talaffuzni o'rganing va savollarga javob berib o'z darajangizni oshiring.</p>
+              <p class="screen-desc">Listen to natural dialogues and lectures, train your ear, and test your comprehension.</p>
             </div>
           </div>
         </header>
@@ -256,8 +253,8 @@
         <section class="player-card">
           <div class="player-header">
             <div>
-              <div class="player-info-title" id="playerTitle">Dars tanlang</div>
-              <div class="player-info-sub" id="playerMeta">Aksent va mavzu ma'lumoti</div>
+              <div class="player-info-title" id="playerTitle">Select a lesson</div>
+              <div class="player-info-sub" id="playerMeta">Accent and topic details</div>
             </div>
             <div class="speed-selector">
               <button class="speed-btn" data-speed="0.75">0.75x</button>
@@ -269,8 +266,6 @@
 
           <!-- Vizual to'lqin (Waveform) -->
           <div class="player-waveform-visualizer" id="waveVisualizer">
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
             <div class="wave-bar"></div>
             <div class="wave-bar"></div>
             <div class="wave-bar"></div>
@@ -295,15 +290,15 @@
           <!-- Pleyer boshqaruv tugmalari -->
           <div class="player-controls">
             <div class="main-controls">
-              <button id="prevBtn" class="btn btn-secondary btn-icon" title="Oldingi jumla">⏮️</button>
-              <button id="playBtn" class="play-main-btn" title="Ijro etish / To'xtatish">▶</button>
-              <button id="nextBtn" class="btn btn-secondary btn-icon" title="Keyingi jumla">⏭️</button>
-              <button id="restartBtn" class="btn btn-secondary btn-icon" title="Boshidan boshlash">🔄</button>
+              <button id="prevBtn" class="player-nav-btn" title="Previous sentence">Prev</button>
+              <button id="playBtn" class="play-main-btn" title="Play / Pause">Play</button>
+              <button id="nextBtn" class="player-nav-btn" title="Next sentence">Next</button>
+              <button id="restartBtn" class="player-nav-btn" title="Restart from beginning">Restart</button>
             </div>
 
             <!-- Shadowing Rejimi -->
-            <label class="mode-toggle" title="Har bir jumlada to'xtab, spiker ketidan takrorlash imkoniyati">
-              <span>Shadowing (Jumlama-jumla):</span>
+            <label class="mode-toggle" title="Pause after each sentence for shadowing">
+              <span>Shadowing:</span>
               <div class="toggle-switch">
                 <input type="checkbox" id="shadowingCheckbox">
                 <span class="slider"></span>
@@ -316,10 +311,10 @@
         <section class="quiz-section">
           <div class="quiz-header">
             <div>
-              <h2 class="quiz-title">Savollar va topshiriqlar</h2>
-              <p class="lesson-desc" style="margin-bottom: 0;">Audioni tinglang va bo'shliqlarni to'ldiring yoki to'g'ri variantni tanlang.</p>
+              <h2 class="quiz-title">Questions &amp; Exercises</h2>
+              <p class="lesson-desc" style="margin-bottom: 0;">Listen carefully and complete the blanks or select the correct option.</p>
             </div>
-            <div id="quizScoreBadge" class="badge badge-beginner" style="display: none;">0/0 To'g'ri</div>
+            <div id="quizScoreBadge" class="badge badge-beginner" style="display: none;">0/0 Correct</div>
           </div>
 
           <div id="questionsContainer">
@@ -328,16 +323,16 @@
 
           <!-- Harakatlar paneli -->
           <div class="quiz-actions">
-            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <div class="quiz-actions-left">
               <button id="checkAnswersBtn" class="btn btn-primary">
-                <span>✅ Javoblarni tekshirish</span>
+                <span>Check answers</span>
               </button>
               <button id="resetQuizBtn" class="btn btn-secondary">
-                <span>🔄 Qayta urinish</span>
+                <span>Try again</span>
               </button>
             </div>
             <button id="toggleExtraBtn" class="btn btn-outline">
-              <span>📜 Skript va Lug'atni ko'rish</span>
+              <span>Script &amp; Vocabulary</span>
             </button>
           </div>
         </section>
@@ -347,9 +342,9 @@
           <!-- Audio-skript paneli -->
           <div class="panel-card">
             <div class="panel-title">
-              <span>📜 Audio-skript (Matn)</span>
+              <span>Audio Script</span>
             </div>
-            <p class="lesson-desc">Istalgan jumlani bosib, aynan o'sha yerdan eshitishingiz mumkin:</p>
+            <p class="lesson-desc">Click any sentence to listen from that exact point:</p>
             <div class="transcript-list" id="transcriptList">
               <!-- Skript jumlalari -->
             </div>
@@ -358,17 +353,17 @@
           <!-- Lug'at va iboralar paneli -->
           <div class="panel-card">
             <div class="panel-title">
-              <span>📖 Kalit so'zlar va Lug'at</span>
+              <span>Key Vocabulary</span>
             </div>
-            <p class="lesson-desc">Ushbu audiodagi yangi so'zlar va ularning ma'nolari:</p>
+            <p class="lesson-desc">Essential words and Uzbek translations from this audio:</p>
             <div class="vocab-list" id="vocabList">
               <!-- So'zlar -->
             </div>
           </div>
         </section>
 
-        <footer class="site-footer" style="margin-top: 3rem;">
-          <p>Listening Master — Ingliz tili tinglab tushunish ko'nikmasini oshirish uchun universal platforma.</p>
+        <footer class="site-footer">
+          <p>English Mastery &mdash; A unified minimalist platform for speaking fluency and listening comprehension.</p>
         </footer>
       </div>
     </div>
@@ -379,30 +374,30 @@
         <div class="modal-header">
           <div class="modal-score-circle">
             <span class="modal-score-percent" id="modalScorePercent">0%</span>
-            <span class="modal-score-label">Natija</span>
+            <span class="modal-score-label">Score</span>
           </div>
-          <h3 id="modalTitle" style="font-size: 1.4rem; margin-bottom: 0.5rem;">Ajoyib mashg'ulot!</h3>
-          <p id="modalFeedback" style="color: var(--text-secondary); font-size: 0.95rem;"></p>
+          <h3 id="modalTitle" class="modal-title">Session Complete</h3>
+          <p id="modalFeedback" class="modal-feedback"></p>
         </div>
 
         <div class="score-meta-grid">
           <div>
-            <div class="meta-item-title">To'g'ri javoblar</div>
+            <div class="meta-item-title">Correct Answers</div>
             <div class="meta-item-val" id="modalCorrectCount">0 / 0</div>
           </div>
           <div>
-            <div class="meta-item-title">CEFR / IELTS darajasi</div>
+            <div class="meta-item-title">Estimated Level</div>
             <div class="meta-item-val" id="modalBandEstimate">B2</div>
           </div>
         </div>
 
-        <p style="font-size: 0.9rem; color: var(--text-muted); text-align: center;">
-          Har bir savol ostidagi yashil va qizil tahlillarni ko'rib chiqing. U yerda kalit so'zlar va tuzoqlar tushuntirilgan.
+        <p class="modal-hint">
+          Review explanations, distractors, and script proof highlighted for each question.
         </p>
 
         <div class="modal-footer">
-          <button id="modalReviewBtn" class="btn btn-primary">Xatolarni ko'rib chiqish</button>
-          <button id="modalCloseBtn" class="btn btn-secondary">Yopish</button>
+          <button id="modalReviewBtn" class="btn btn-primary">Review Answers</button>
+          <button id="modalCloseBtn" class="btn btn-secondary">Close</button>
         </div>
       </div>
     </div>
@@ -411,14 +406,14 @@
     <div class="modal-backdrop" id="historyModal">
       <div class="modal-dialog">
         <div class="modal-header">
-          <h3 style="font-size: 1.3rem;">📊 Sizning o'tgan natijalaringiz</h3>
+          <h3 class="modal-title">Past Results History</h3>
         </div>
-        <div id="historyList" style="max-height: 350px; overflow-y: auto; margin: 1rem 0;">
+        <div id="historyList" class="history-list-container">
           <!-- Natijalar ro'yxati -->
         </div>
         <div class="modal-footer">
-          <button id="clearHistoryBtn" class="btn btn-outline" style="color: var(--danger);">Tarixni tozalash</button>
-          <button id="closeHistoryBtn" class="btn btn-secondary">Yopish</button>
+          <button id="clearHistoryBtn" class="btn btn-outline btn-danger">Clear History</button>
+          <button id="closeHistoryBtn" class="btn btn-secondary">Close</button>
         </div>
       </div>
     </div>

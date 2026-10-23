@@ -151,7 +151,7 @@ button {
    ========================================================================== */
 .site-header {
   width: 100%;
-  max-width: 1100px;
+  max-width: 860px;
   margin: 0 auto;
   padding: 24px 24px 20px;
   display: flex;
@@ -163,13 +163,13 @@ button {
 .site-header-left {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 20px;
 }
 
 .site-brand {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text);
   text-decoration: none;
@@ -185,18 +185,20 @@ button {
   border: 1px solid var(--line-color);
   padding: 2px;
   background: #FAFAFA;
+  border-radius: 4px;
 }
 
 .module-nav-btn {
-  padding: 6px 16px;
+  padding: 5px 14px;
   font-size: 13px;
   font-weight: 500;
   color: var(--text-muted);
-  border: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
   background: transparent;
   cursor: pointer;
   transition: all var(--transition-fast);
-  min-height: 32px;
+  min-height: 30px;
   text-align: center;
 }
 

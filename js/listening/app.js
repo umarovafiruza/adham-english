@@ -66,28 +66,8 @@ document.addEventListener("DOMContentLoaded", () => {
   window.listeningPlayer = player;
   window.listeningQuiz = quiz;
 
-  /* ==========================================================================
-     1. Mavzuni boshqarish (Theme Switcher)
-     ========================================================================== */
-  if (themeToggleBtn && themeIcon) {
-    const savedTheme = localStorage.getItem("lm_theme") || "light";
-    document.documentElement.setAttribute("data-theme", savedTheme);
-    updateThemeIcon(savedTheme);
-
-    themeToggleBtn.addEventListener("click", () => {
-      const currentTheme = document.documentElement.getAttribute("data-theme");
-      const nextTheme = currentTheme === "dark" ? "light" : "dark";
-      document.documentElement.setAttribute("data-theme", nextTheme);
-      localStorage.setItem("lm_theme", nextTheme);
-      updateThemeIcon(nextTheme);
-    });
-  }
-
-  function updateThemeIcon(theme) {
-    if (themeIcon) {
-      themeIcon.textContent = theme === "dark" ? "☀️" : "🌙";
-    }
-  }
+  // Enforce consistent light minimalist theme
+  document.documentElement.setAttribute("data-theme", "light");
 
   /* ==========================================================================
      2. Darajalar va Darslarni render qilish
@@ -121,14 +101,15 @@ document.addEventListener("DOMContentLoaded", () => {
         <div>
           <div class="lesson-card-header">
             <span class="badge ${getBadgeClass(lesson.level)}">${lesson.topic}</span>
-            <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">${lesson.duration}</span>
+            <span class="lesson-card-duration">${lesson.duration}</span>
           </div>
           <h3 class="lesson-title">${lesson.title}</h3>
           <p class="lesson-desc">${lesson.description}</p>
         </div>
         <div class="lesson-meta">
-          <span>🗣️ ${lesson.accent}</span>
-          <span>❓ ${lesson.questions.length} ta savol</span>
+          <span>${lesson.accent}</span>
+          <span>&middot;</span>
+          <span>${lesson.questions.length} questions</span>
         </div>
       `;
 
@@ -285,13 +266,13 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="vocab-word-header">
           <div>
             <span class="vocab-word">${v.word}</span>
-            <span class="vocab-phonetic">${v.phonetic} • <em>${v.pos}</em></span>
+            <span class="vocab-phonetic">${v.phonetic} &middot; <em>${v.pos}</em></span>
           </div>
-          <button class="btn btn-outline btn-icon" style="width: 2rem; height: 2rem;" title="Talaffuz qilish">🔊</button>
+          <button type="button" class="vocab-speak-btn" title="Pronounce word">Listen</button>
         </div>
-        <div class="vocab-uzbek">🇺🇿 ${v.uzbek}</div>
+        <div class="vocab-uzbek">${v.uzbek}</div>
         <div class="vocab-def">${v.definition}</div>
-        <div style="font-size: 0.8rem; font-style: italic; color: var(--text-muted); margin-top: 0.2rem;">"${v.example}"</div>
+        <div class="vocab-example">"${v.example}"</div>
       `;
 
       // Ovoz chiqarish tugmasi
@@ -352,12 +333,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // Player holat o'zgarishi
   player.onStateChange = (state) => {
     if (state.isPlaying && !state.isPaused) {
-      playBtn.textContent = "⏸";
-      playBtn.title = "To'xtatib turish";
+      playBtn.textContent = "Pause";
+      playBtn.title = "Pause audio";
       waveVisualizer.classList.add("playing");
     } else {
-      playBtn.textContent = "▶";
-      playBtn.title = "Ijro etish";
+      playBtn.textContent = "Play";
+      playBtn.title = "Play audio";
       waveVisualizer.classList.remove("playing");
     }
   };
@@ -399,17 +380,16 @@ document.addEventListener("DOMContentLoaded", () => {
         qCard.classList.remove("correct", "incorrect");
         qCard.classList.add(item.isCorrect ? "correct" : "incorrect");
 
-        const statusIcon = item.isCorrect ? "✅ To'g'ri!" : "❌ Noto'g'ri";
+        const statusLabel = item.isCorrect ? "Correct" : "Incorrect";
         const answerInfo = item.isCorrect 
-          ? `<strong>Sizning javobingiz:</strong> ${item.userAnswer}`
-          : `<strong>Sizning javobingiz:</strong> ${item.userAnswer || "<em>(Javob berilmagan)</em>"} <br><strong>To'g'ri javob:</strong> <span style="font-weight: 700; color: #166534;">${item.correctAnswer}</span>`;
+          ? `<strong>Your answer:</strong> ${item.userAnswer}`
+          : `<strong>Your answer:</strong> ${item.userAnswer || "<em>(No answer)</em>"} &middot; <strong>Correct:</strong> <span class="feedback-correct-val">${item.correctAnswer}</span>`;
 
         feedbackEl.innerHTML = `
           <div class="question-feedback ${item.isCorrect ? 'feedback-correct' : 'feedback-incorrect'}">
-            <div>${statusIcon} ${answerInfo}</div>
-            <span class="distractor-alert">💡 Izoh va Tuzoqlar tahlili:</span>
-            <div>${item.explanation}</div>
-            <span class="evidence-quote">🔍 Skriptdagi isboti: "${item.scriptEvidence}"</span>
+            <div class="feedback-header"><span class="feedback-status-pill ${item.isCorrect ? 'correct' : 'incorrect'}">${statusLabel}</span> ${answerInfo}</div>
+            <div class="feedback-explanation"><strong>Explanation:</strong> ${item.explanation}</div>
+            <div class="feedback-evidence"><strong>Proof from script:</strong> "${item.scriptEvidence}"</div>
           </div>
         `;
       }
@@ -417,7 +397,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Score badge
     quizScoreBadge.style.display = "inline-flex";
-    quizScoreBadge.textContent = `${summary.correctCount} / ${summary.totalQuestions} To'g'ri (${summary.percentage}%)`;
+    quizScoreBadge.textContent = `${summary.correctCount} / ${summary.totalQuestions} Correct (${summary.percentage}%)`;
     quizScoreBadge.className = `badge ${summary.percentage >= 70 ? 'badge-beginner' : 'badge-advanced'}`;
 
     // Natijalar modalini ochish
@@ -439,7 +419,7 @@ document.addEventListener("DOMContentLoaded", () => {
   toggleExtraBtn.addEventListener("click", () => {
     const isHidden = extraSection.style.display === "none";
     extraSection.style.display = isHidden ? "grid" : "none";
-    toggleExtraBtn.querySelector("span").textContent = isHidden ? "❌ Skriptni yashirish" : "📜 Skript va Lug'atni ko'rish";
+    toggleExtraBtn.querySelector("span").textContent = isHidden ? "Hide Script & Vocabulary" : "Script & Vocabulary";
   });
 
   modalCloseBtn.addEventListener("click", () => {
@@ -450,7 +430,7 @@ document.addEventListener("DOMContentLoaded", () => {
     resultsModal.classList.remove("show");
     // Skript va lug'atni avtomatik ochish
     extraSection.style.display = "grid";
-    toggleExtraBtn.querySelector("span").textContent = "❌ Skriptni yashirish";
+    toggleExtraBtn.querySelector("span").textContent = "Hide Script & Vocabulary";
     questionsContainer.scrollIntoView({ behavior: "smooth" });
   });
 
@@ -483,17 +463,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     history.forEach(item => {
-      const date = new Date(item.date).toLocaleDateString("uz-UZ", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+      const date = new Date(item.date).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
       const row = document.createElement("div");
-      row.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color); font-size: 0.9rem;";
+      row.className = "history-item-row";
       row.innerHTML = `
         <div>
-          <div style="font-weight: 700;">${item.lessonTitle}</div>
-          <div style="font-size: 0.8rem; color: var(--text-muted);">${date} • Daraja: ${item.level.toUpperCase()}</div>
+          <div class="history-item-title">${item.lessonTitle}</div>
+          <div class="history-item-meta">${date} &middot; Level: ${item.level.toUpperCase()}</div>
         </div>
-        <div style="text-align: right;">
-          <div style="font-weight: 800; color: var(--accent-primary); font-size: 1.1rem;">${item.percentage}%</div>
-          <div style="font-size: 0.75rem; color: var(--text-muted);">${item.correctCount}/${item.totalQuestions} • ${item.cefrLevel}</div>
+        <div class="history-item-score">
+          <div class="history-item-pct">${item.percentage}%</div>
+          <div class="history-item-sub">${item.correctCount}/${item.totalQuestions} &middot; ${item.cefrLevel}</div>
         </div>
       `;
       historyList.appendChild(row);
