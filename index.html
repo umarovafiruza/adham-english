@@ -1,223 +1,441 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Practice Speaking — English Aloud</title>
-  <meta name="description" content="A minimalist English-speaking practice teleprompter with background lofi music, vocabulary translations, and pace tracking.">
+  <title>English Mastery — Speaking &amp; Listening Practice</title>
+  <meta name="description" content="A minimalist English practice platform with teleprompter speaking coach, voice recording, and interactive listening comprehension master.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="listening.css">
 </head>
 <body>
   <div class="site-wrapper">
 
     <!-- Top Navigation / Minimal Header -->
     <header class="site-header" id="site-header">
-      <a href="#topics" class="site-brand" id="nav-brand">English Aloud</a>
+      <div class="site-header-left">
+        <a href="#topics" class="site-brand" id="nav-brand">English Mastery</a>
+        <div class="module-nav" role="tablist" aria-label="Practice modules">
+          <button type="button" class="module-nav-btn active" id="tab-speaking" role="tab" aria-selected="true" aria-controls="module-speaking">Speaking</button>
+          <button type="button" class="module-nav-btn" id="tab-listening" role="tab" aria-selected="false" aria-controls="module-listening">Listening</button>
+        </div>
+      </div>
       <nav class="site-nav">
+        <!-- Speaking Extra Nav Action -->
         <button type="button" class="nav-text-btn" id="nav-words-btn">
           Saved words (<span id="saved-words-count">0</span>)
+        </button>
+        <!-- Listening Extra Nav Actions -->
+        <button type="button" class="nav-text-btn hidden" id="historyBtn" title="Natijalar tarixi">
+          Natijalar tarixi
+        </button>
+        <button type="button" class="nav-text-btn hidden" id="themeToggleBtn" title="Mavzuni almashtirish" style="font-size: 1.1rem; padding: 0 4px;">
+          <span id="themeIcon">🌙</span>
         </button>
       </nav>
     </header>
 
-    <!-- SCREEN 1: Topics Selection -->
-    <main class="screen-view active" id="screen-topics" aria-label="Topic selection screen">
-      <div class="container">
-        <header class="section-intro">
-          <h1 class="screen-title">Speaking Practice</h1>
-          <p class="screen-desc">Select a topic below. Read each sentence aloud as it rolls upward, finding your natural rhythm and clarity.</p>
-        </header>
+    <!-- MODULE 1: SPEAKING PRACTICE -->
+    <div id="module-speaking" class="app-module" role="tabpanel" aria-labelledby="tab-speaking">
 
-        <ul class="topic-index" id="topics-list" role="list">
-          <!-- Dynamically populated from data.js -->
-        </ul>
-      </div>
-    </main>
+      <!-- SCREEN 1: Topics Selection -->
+      <main class="screen-view active" id="screen-topics" aria-label="Topic selection screen">
+        <div class="container">
+          <header class="section-intro">
+            <h1 class="screen-title">Speaking Practice</h1>
+            <p class="screen-desc">Select a topic below. Read each sentence aloud as it rolls upward, finding your natural rhythm and clarity.</p>
+          </header>
 
-    <!-- SCREEN 2: Prepare Screen -->
-    <main class="screen-view" id="screen-prepare" aria-label="Preparation screen">
-      <div class="container narrow">
-        <nav class="screen-nav">
-          <button type="button" class="nav-text-btn" id="prepare-back-btn">Back to topics</button>
-        </nav>
-
-        <header class="prepare-heading">
-          <span class="topic-kicker" id="prepare-topic-number">01</span>
-          <h1 class="prepare-title" id="prepare-topic-title">Daily Routine</h1>
-          <p class="prepare-sub" id="prepare-word-count">160 words &middot; Everyday English</p>
-        </header>
-
-        <section class="prepare-block" aria-labelledby="heading-keywords">
-          <h2 class="block-title" id="heading-keywords">Key words &amp; Uzbek translations</h2>
-          <div class="keyword-pairs" id="prepare-glossary-list">
-            <!-- Keyword + Uzbek translation items -->
-          </div>
-        </section>
-
-        <section class="prepare-block" aria-labelledby="heading-pace">
-          <div class="pace-header-row">
-            <h2 class="block-title" id="heading-pace">Reading pace</h2>
-            <span class="pace-current-value"><span id="prepare-wpm-val">130</span> WPM</span>
-          </div>
-          <div class="pace-slider-wrapper">
-            <span class="pace-slider-bound">60</span>
-            <input type="range" id="prepare-speed-slider" class="minimal-slider" min="60" max="260" step="5" value="130" aria-label="Reading pace in words per minute">
-            <span class="pace-slider-bound">260 max</span>
-          </div>
-        </section>
-
-        <div class="prepare-submit">
-          <button type="button" class="action-bold" id="start-reading-btn">Begin reading</button>
+          <ul class="topic-index" id="topics-list" role="list">
+            <!-- Dynamically populated from data.js -->
+          </ul>
         </div>
-      </div>
-    </main>
+      </main>
 
-    <!-- SCREEN 3: Reading Teleprompter Screen -->
-    <main class="screen-view" id="screen-reading" aria-label="Teleprompter reading screen">
-      <!-- Fixed Reading Header (Minimalist top nav: clean back link only) -->
-      <header class="reading-bar" id="reading-bar">
-        <button type="button" class="nav-text-btn reading-back-btn" id="reading-back-btn">
-          <span class="nav-back-full">&larr; Back to topics</span>
-          <span class="nav-back-short">&larr; Back</span>
-        </button>
-      </header>
+      <!-- SCREEN 2: Prepare Screen -->
+      <main class="screen-view" id="screen-prepare" aria-label="Preparation screen">
+        <div class="container narrow">
+          <nav class="screen-nav">
+            <button type="button" class="nav-text-btn" id="prepare-back-btn">Back to topics</button>
+          </nav>
 
-      <!-- Eye Focus Horizontal Guide Line -->
-      <div class="reading-focus-guide" aria-hidden="true">
-        <div class="focus-guide-inner">
-          <span class="focus-marker-line focus-marker-left"></span>
-          <span class="focus-guide-wire"></span>
-          <span class="focus-marker-line focus-marker-right"></span>
-        </div>
-      </div>
+          <header class="prepare-heading">
+            <span class="topic-kicker" id="prepare-topic-number">01</span>
+            <h1 class="prepare-title" id="prepare-topic-title">Daily Routine</h1>
+            <p class="prepare-sub" id="prepare-word-count">160 words &middot; Everyday English</p>
+          </header>
 
-      <!-- 3-2-1 Countdown Overlay -->
-      <div class="countdown-overlay hidden" id="countdown-overlay" aria-live="assertive" aria-atomic="true">
-        <div class="countdown-digit" id="countdown-digit">3</div>
-        <div class="countdown-prompt" id="countdown-prompt">Get ready to speak</div>
-      </div>
-
-      <!-- Teleprompter Viewport -->
-      <div class="teleprompter-stage" id="teleprompter-stage" tabindex="0" role="region" aria-label="Teleprompter scroll area">
-        <div class="teleprompter-flow" id="teleprompter-flow">
-          <!-- Text sentences and glossary words -->
-        </div>
-      </div>
-
-      <!-- Translation Panel Near Clicked Word -->
-      <div class="floating-translation hidden" id="word-panel" role="dialog" aria-labelledby="panel-word-en" aria-modal="false">
-        <div class="panel-inner">
-          <div class="panel-words">
-            <span class="panel-word-en" id="panel-word-en">word</span>
-            <span class="panel-word-uz" id="panel-word-uz">tarjima</span>
-          </div>
-          <div class="panel-actions">
-            <button type="button" class="panel-btn" id="panel-listen-btn">Listen</button>
-            <button type="button" class="panel-btn" id="panel-save-btn">Save</button>
-            <button type="button" class="panel-btn" id="panel-close-btn">Keep going</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Reading Controls Bottom Bar (All controls, speed slider & audio at bottom) -->
-      <footer class="reading-footer" id="reading-footer">
-        <div class="reading-footer-inner">
-          <div class="reading-footer-actions">
-            <button type="button" class="footer-btn" id="reading-toggle-btn">Hold on</button>
-            <button type="button" class="footer-btn" id="reading-restart-btn">Start over</button>
-          </div>
-          <div class="reading-sliders-group" id="reading-sliders-group">
-            <div class="reading-pace-control">
-              <label for="reading-speed-slider" class="volume-label">Speed <span id="reading-wpm-val">130</span></label>
-              <input type="range" id="reading-speed-slider" class="minimal-slider pace-slider" min="60" max="260" step="5" value="130" aria-label="Reading pace in words per minute">
+          <section class="prepare-block" aria-labelledby="heading-keywords">
+            <h2 class="block-title" id="heading-keywords">Key words &amp; Uzbek translations</h2>
+            <div class="keyword-pairs" id="prepare-glossary-list">
+              <!-- Keyword + Uzbek translation items -->
             </div>
-            <div class="reading-volume">
-              <label for="music-volume" class="volume-label">Music</label>
-              <input type="range" id="music-volume" class="volume-slider" min="0" max="1" step="0.01" value="0.5" aria-label="Music volume">
+          </section>
+
+          <section class="prepare-block" aria-labelledby="heading-pace">
+            <div class="pace-header-row">
+              <h2 class="block-title" id="heading-pace">Reading pace</h2>
+              <span class="pace-current-value"><span id="prepare-wpm-val">130</span> WPM</span>
             </div>
-            <span class="reading-rec-indicator hidden" id="reading-rec-indicator" title="Voice recording active">Rec</span>
+            <div class="pace-slider-wrapper">
+              <span class="pace-slider-bound">60</span>
+              <input type="range" id="prepare-speed-slider" class="minimal-slider" min="60" max="260" step="5" value="130" aria-label="Reading pace in words per minute">
+              <span class="pace-slider-bound">260 max</span>
+            </div>
+          </section>
+
+          <div class="prepare-submit">
+            <button type="button" class="action-bold" id="start-reading-btn">Begin reading</button>
           </div>
         </div>
-      </footer>
-    </main>
+      </main>
 
-    <!-- SCREEN 4: Finish Screen -->
-    <main class="screen-view" id="screen-finish" aria-label="Reading completion summary">
-      <div class="container narrow">
-        <header class="finish-heading">
-          <span class="topic-kicker">Completed</span>
-          <h1 class="finish-title" id="finish-topic-title">Daily Routine</h1>
-          <p class="finish-sub">Text completed. Review your speaking pace and explored vocabulary.</p>
+      <!-- SCREEN 3: Reading Teleprompter Screen -->
+      <main class="screen-view" id="screen-reading" aria-label="Teleprompter reading screen">
+        <!-- Fixed Reading Header (Minimalist top nav: clean back link only) -->
+        <header class="reading-bar" id="reading-bar">
+          <button type="button" class="nav-text-btn reading-back-btn" id="reading-back-btn">
+            <span class="nav-back-full">&larr; Back to topics</span>
+            <span class="nav-back-short">&larr; Back</span>
+          </button>
         </header>
 
-        <section class="finish-stats" aria-label="Speaking performance metrics">
-          <div class="stat-cell">
-            <span class="stat-number" id="finish-reading-time">1m 15s</span>
-            <span class="stat-desc">Speaking time</span>
+        <!-- Eye Focus Horizontal Guide Line -->
+        <div class="reading-focus-guide" aria-hidden="true">
+          <div class="focus-guide-inner">
+            <span class="focus-marker-line focus-marker-left"></span>
+            <span class="focus-guide-wire"></span>
+            <span class="focus-marker-line focus-marker-right"></span>
           </div>
-          <div class="stat-cell">
-            <span class="stat-number" id="finish-wpm">132 WPM</span>
-            <span class="stat-desc">Calculated pace</span>
-          </div>
-          <div class="stat-cell">
-            <span class="stat-number" id="finish-tapped-count">2</span>
-            <span class="stat-desc">Hard words explored</span>
-          </div>
-        </section>
-
-        <!-- Audio Recording Playback Section (Max 3 stored in localStorage) -->
-        <section class="finish-recording-block" id="finish-recording-block" aria-label="Speaking voice recordings">
-          <div class="recording-header">
-            <span class="recording-label">Your voice recordings</span>
-            <span class="recording-counter" id="recording-counter">0 of 3 stored</span>
-          </div>
-          <p class="recording-note">Saved in local storage (max 3 audios &middot; oldest is replaced automatically).</p>
-          <div class="recordings-list" id="recordings-list">
-            <!-- Dynamically populated list of up to 3 recordings -->
-          </div>
-          <audio id="finish-audio-player" class="hidden" preload="metadata"></audio>
-        </section>
-
-        <div class="personal-best-note hidden" id="finish-best-note">
-          New personal best pace for this topic.
         </div>
 
-        <nav class="finish-nav" aria-label="Next steps">
-          <button type="button" class="action-bold" id="finish-retry-btn">Once more</button>
-          <button type="button" class="nav-text-btn" id="finish-next-btn">Next topic</button>
-          <button type="button" class="nav-text-btn" id="finish-topics-btn">Back to topics</button>
-        </nav>
-      </div>
-    </main>
+        <!-- 3-2-1 Countdown Overlay -->
+        <div class="countdown-overlay hidden" id="countdown-overlay" aria-live="assertive" aria-atomic="true">
+          <div class="countdown-digit" id="countdown-digit">3</div>
+          <div class="countdown-prompt" id="countdown-prompt">Get ready to speak</div>
+        </div>
 
-    <!-- SCREEN 5: My Words Screen -->
-    <main class="screen-view" id="screen-words" aria-label="Saved vocabulary list">
-      <div class="container narrow">
-        <nav class="screen-nav">
-          <button type="button" class="nav-text-btn" id="words-back-btn">Back to topics</button>
-        </nav>
+        <!-- Teleprompter Viewport -->
+        <div class="teleprompter-stage" id="teleprompter-stage" tabindex="0" role="region" aria-label="Teleprompter scroll area">
+          <div class="teleprompter-flow" id="teleprompter-flow">
+            <!-- Text sentences and glossary words -->
+          </div>
+        </div>
 
+        <!-- Translation Panel Near Clicked Word -->
+        <div class="floating-translation hidden" id="word-panel" role="dialog" aria-labelledby="panel-word-en" aria-modal="false">
+          <div class="panel-inner">
+            <div class="panel-words">
+              <span class="panel-word-en" id="panel-word-en">word</span>
+              <span class="panel-word-uz" id="panel-word-uz">tarjima</span>
+            </div>
+            <div class="panel-actions">
+              <button type="button" class="panel-btn" id="panel-listen-btn">Listen</button>
+              <button type="button" class="panel-btn" id="panel-save-btn">Save</button>
+              <button type="button" class="panel-btn" id="panel-close-btn">Keep going</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reading Controls Bottom Bar (All controls, speed slider & audio at bottom) -->
+        <footer class="reading-footer" id="reading-footer">
+          <div class="reading-footer-inner">
+            <div class="reading-footer-actions">
+              <button type="button" class="footer-btn" id="reading-toggle-btn">Hold on</button>
+              <button type="button" class="footer-btn" id="reading-restart-btn">Start over</button>
+            </div>
+            <div class="reading-sliders-group" id="reading-sliders-group">
+              <div class="reading-pace-control">
+                <label for="reading-speed-slider" class="pace-label">Speed <span id="reading-wpm-val">130</span></label>
+                <input type="range" id="reading-speed-slider" class="minimal-slider pace-slider" min="60" max="260" step="5" value="130" aria-label="Reading pace in words per minute">
+              </div>
+              <span class="reading-rec-indicator hidden" id="reading-rec-indicator" title="Voice recording active">Rec</span>
+            </div>
+          </div>
+        </footer>
+      </main>
+
+      <!-- SCREEN 4: Finish Screen -->
+      <main class="screen-view" id="screen-finish" aria-label="Reading completion summary">
+        <div class="container narrow">
+          <header class="finish-heading">
+            <span class="topic-kicker">Completed</span>
+            <h1 class="finish-title" id="finish-topic-title">Daily Routine</h1>
+            <p class="finish-sub">Text completed. Review your speaking pace and explored vocabulary.</p>
+          </header>
+
+          <section class="finish-stats" aria-label="Speaking performance metrics">
+            <div class="stat-cell">
+              <span class="stat-number" id="finish-reading-time">1m 15s</span>
+              <span class="stat-desc">Speaking time</span>
+            </div>
+            <div class="stat-cell">
+              <span class="stat-number" id="finish-wpm">132 WPM</span>
+              <span class="stat-desc">Calculated pace</span>
+            </div>
+            <div class="stat-cell">
+              <span class="stat-number" id="finish-tapped-count">2</span>
+              <span class="stat-desc">Hard words explored</span>
+            </div>
+          </section>
+
+          <!-- Audio Recording Playback Section (Max 3 stored in localStorage) -->
+          <section class="finish-recording-block" id="finish-recording-block" aria-label="Speaking voice recordings">
+            <div class="recording-header">
+              <span class="recording-label">Your voice recordings</span>
+              <span class="recording-counter" id="recording-counter">0 of 3 stored</span>
+            </div>
+            <p class="recording-note">Saved in local storage (max 3 audios &middot; oldest is replaced automatically).</p>
+            <div class="recordings-list" id="recordings-list">
+              <!-- Dynamically populated list of up to 3 recordings -->
+            </div>
+            <audio id="finish-audio-player" class="hidden" preload="metadata"></audio>
+          </section>
+
+          <div class="personal-best-note hidden" id="finish-best-note">
+            New personal best pace for this topic.
+          </div>
+
+          <nav class="finish-nav" aria-label="Next steps">
+            <button type="button" class="action-bold" id="finish-retry-btn">Once more</button>
+            <button type="button" class="nav-text-btn" id="finish-next-btn">Next topic</button>
+            <button type="button" class="nav-text-btn" id="finish-topics-btn">Back to topics</button>
+          </nav>
+        </div>
+      </main>
+
+      <!-- SCREEN 5: My Words Screen -->
+      <main class="screen-view" id="screen-words" aria-label="Saved vocabulary list">
+        <div class="container narrow">
+          <nav class="screen-nav">
+            <button type="button" class="nav-text-btn" id="words-back-btn">Back to topics</button>
+          </nav>
+
+          <header class="section-intro">
+            <h1 class="screen-title">Saved Words</h1>
+            <p class="screen-desc" id="words-count-desc">Words you flagged during speaking practice.</p>
+          </header>
+
+          <div class="saved-vocabulary" id="saved-words-container">
+            <!-- Dynamic word rows -->
+          </div>
+        </div>
+      </main>
+
+    </div>
+
+    <!-- MODULE 2: LISTENING MASTER -->
+    <div id="module-listening" class="app-module hidden" role="tabpanel" aria-labelledby="tab-listening">
+      <div class="listening-container">
+        <!-- Section Intro -->
         <header class="section-intro">
-          <h1 class="screen-title">Saved Words</h1>
-          <p class="screen-desc" id="words-count-desc">Words you flagged during speaking practice.</p>
+          <div class="listening-intro-header">
+            <div>
+              <h1 class="screen-title">Listening Practice</h1>
+              <p class="screen-desc">Audio tinglang, tabiiy talaffuzni o'rganing va savollarga javob berib o'z darajangizni oshiring.</p>
+            </div>
+          </div>
         </header>
 
-        <div class="saved-vocabulary" id="saved-words-container">
-          <!-- Dynamic word rows -->
+        <!-- Daraja tanlash paneli -->
+        <section class="level-tabs-container">
+          <div class="level-tabs" id="levelTabs">
+            <!-- JS orqali dinamik yaratiladi -->
+          </div>
+        </section>
+
+        <!-- Darslar ro'yxati -->
+        <section class="lessons-grid" id="lessonsGrid">
+          <!-- JS orqali dars kartochkalari yuklanadi -->
+        </section>
+
+        <!-- Audio Player Kartochkasi -->
+        <section class="player-card">
+          <div class="player-header">
+            <div>
+              <div class="player-info-title" id="playerTitle">Dars tanlang</div>
+              <div class="player-info-sub" id="playerMeta">Aksent va mavzu ma'lumoti</div>
+            </div>
+            <div class="speed-selector">
+              <button class="speed-btn" data-speed="0.75">0.75x</button>
+              <button class="speed-btn" data-speed="0.9">0.9x</button>
+              <button class="speed-btn active" data-speed="1.0">1.0x</button>
+              <button class="speed-btn" data-speed="1.25">1.25x</button>
+            </div>
+          </div>
+
+          <!-- Vizual to'lqin (Waveform) -->
+          <div class="player-waveform-visualizer" id="waveVisualizer">
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+          </div>
+
+          <!-- Vaqt va Progress -->
+          <div class="timeline-container">
+            <span class="time-label" id="currentTimeLabel">0:00</span>
+            <div class="progress-track" id="progressTrack">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <span class="time-label" id="totalTimeLabel">0:00</span>
+          </div>
+
+          <!-- Pleyer boshqaruv tugmalari -->
+          <div class="player-controls">
+            <div class="main-controls">
+              <button id="prevBtn" class="btn btn-secondary btn-icon" title="Oldingi jumla">⏮️</button>
+              <button id="playBtn" class="play-main-btn" title="Ijro etish / To'xtatish">▶</button>
+              <button id="nextBtn" class="btn btn-secondary btn-icon" title="Keyingi jumla">⏭️</button>
+              <button id="restartBtn" class="btn btn-secondary btn-icon" title="Boshidan boshlash">🔄</button>
+            </div>
+
+            <!-- Shadowing Rejimi -->
+            <label class="mode-toggle" title="Har bir jumlada to'xtab, spiker ketidan takrorlash imkoniyati">
+              <span>Shadowing (Jumlama-jumla):</span>
+              <div class="toggle-switch">
+                <input type="checkbox" id="shadowingCheckbox">
+                <span class="slider"></span>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <!-- Savollar va Mashqlar qismi -->
+        <section class="quiz-section">
+          <div class="quiz-header">
+            <div>
+              <h2 class="quiz-title">Savollar va topshiriqlar</h2>
+              <p class="lesson-desc" style="margin-bottom: 0;">Audioni tinglang va bo'shliqlarni to'ldiring yoki to'g'ri variantni tanlang.</p>
+            </div>
+            <div id="quizScoreBadge" class="badge badge-beginner" style="display: none;">0/0 To'g'ri</div>
+          </div>
+
+          <div id="questionsContainer">
+            <!-- Savollar dinamik ravishda JS orqali joylanadi -->
+          </div>
+
+          <!-- Harakatlar paneli -->
+          <div class="quiz-actions">
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button id="checkAnswersBtn" class="btn btn-primary">
+                <span>✅ Javoblarni tekshirish</span>
+              </button>
+              <button id="resetQuizBtn" class="btn btn-secondary">
+                <span>🔄 Qayta urinish</span>
+              </button>
+            </div>
+            <button id="toggleExtraBtn" class="btn btn-outline">
+              <span>📜 Skript va Lug'atni ko'rish</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Qo'shimcha materiallar: Skript va Lug'at -->
+        <section class="extra-section" id="extraSection" style="display: none;">
+          <!-- Audio-skript paneli -->
+          <div class="panel-card">
+            <div class="panel-title">
+              <span>📜 Audio-skript (Matn)</span>
+            </div>
+            <p class="lesson-desc">Istalgan jumlani bosib, aynan o'sha yerdan eshitishingiz mumkin:</p>
+            <div class="transcript-list" id="transcriptList">
+              <!-- Skript jumlalari -->
+            </div>
+          </div>
+
+          <!-- Lug'at va iboralar paneli -->
+          <div class="panel-card">
+            <div class="panel-title">
+              <span>📖 Kalit so'zlar va Lug'at</span>
+            </div>
+            <p class="lesson-desc">Ushbu audiodagi yangi so'zlar va ularning ma'nolari:</p>
+            <div class="vocab-list" id="vocabList">
+              <!-- So'zlar -->
+            </div>
+          </div>
+        </section>
+
+        <footer class="site-footer" style="margin-top: 3rem;">
+          <p>Listening Master — Ingliz tili tinglab tushunish ko'nikmasini oshirish uchun universal platforma.</p>
+        </footer>
+      </div>
+    </div>
+
+    <!-- Natijalar modali -->
+    <div class="modal-backdrop" id="resultsModal">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div class="modal-score-circle">
+            <span class="modal-score-percent" id="modalScorePercent">0%</span>
+            <span class="modal-score-label">Natija</span>
+          </div>
+          <h3 id="modalTitle" style="font-size: 1.4rem; margin-bottom: 0.5rem;">Ajoyib mashg'ulot!</h3>
+          <p id="modalFeedback" style="color: var(--text-secondary); font-size: 0.95rem;"></p>
+        </div>
+
+        <div class="score-meta-grid">
+          <div>
+            <div class="meta-item-title">To'g'ri javoblar</div>
+            <div class="meta-item-val" id="modalCorrectCount">0 / 0</div>
+          </div>
+          <div>
+            <div class="meta-item-title">CEFR / IELTS darajasi</div>
+            <div class="meta-item-val" id="modalBandEstimate">B2</div>
+          </div>
+        </div>
+
+        <p style="font-size: 0.9rem; color: var(--text-muted); text-align: center;">
+          Har bir savol ostidagi yashil va qizil tahlillarni ko'rib chiqing. U yerda kalit so'zlar va tuzoqlar tushuntirilgan.
+        </p>
+
+        <div class="modal-footer">
+          <button id="modalReviewBtn" class="btn btn-primary">Xatolarni ko'rib chiqish</button>
+          <button id="modalCloseBtn" class="btn btn-secondary">Yopish</button>
         </div>
       </div>
-    </main>
+    </div>
+
+    <!-- Tarix modali -->
+    <div class="modal-backdrop" id="historyModal">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3 style="font-size: 1.3rem;">📊 Sizning o'tgan natijalaringiz</h3>
+        </div>
+        <div id="historyList" style="max-height: 350px; overflow-y: auto; margin: 1rem 0;">
+          <!-- Natijalar ro'yxati -->
+        </div>
+        <div class="modal-footer">
+          <button id="clearHistoryBtn" class="btn btn-outline" style="color: var(--danger);">Tarixni tozalash</button>
+          <button id="closeHistoryBtn" class="btn btn-secondary">Yopish</button>
+        </div>
+      </div>
+    </div>
 
   </div>
 
-  <!-- Audio Elements -->
-  <audio id="lofi-audio" src="assets/lofi.mp3" loop preload="auto"></audio>
+  <!-- Audio Prompt Fallback -->
   <audio id="intro-audio" src="assets/intro.mp3" preload="auto"></audio>
 
+  <!-- Speaking scripts -->
   <script src="data.js"></script>
   <script src="app.js"></script>
+
+  <!-- Listening scripts -->
+  <script src="js/listening/data.js"></script>
+  <script src="js/listening/audio-player.js"></script>
+  <script src="js/listening/quiz-engine.js"></script>
+  <script src="js/listening/app.js"></script>
 </body>
 </html>

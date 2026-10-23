@@ -1,0 +1,21 @@
+{
+  "name": "english-mastery",
+  "version": "2.0.0",
+  "description": "Minimalist English practice web app — Speaking teleprompter with voice recording & Listening comprehension master",
+  "main": "app.js",
+  "scripts": {
+    "test": "node test-listening.js",
+    "start": "npx serve ."
+  },
+  "keywords": [
+    "english",
+    "speaking",
+    "teleprompter",
+    "listening",
+    "cefr",
+    "ielts",
+    "voice-recorder"
+  ],
+  "author": "Antigravity",
+  "license": "MIT"
+}

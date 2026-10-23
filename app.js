@@ -13,7 +13,6 @@
   const STORAGE_KEYS = {
     FINISHED_TOPICS: "speak_finished_topics",
     LAST_SPEED: "speak_last_speed",
-    MUSIC_VOLUME: "speak_music_volume",
     SAVED_WORDS: "speak_saved_words",
     BEST_WPM: "speak_best_wpm",
     RECORDINGS: "speak_voice_recordings"
@@ -49,7 +48,6 @@
     currentScreen: "topics",
     currentTopic: null,
     currentSpeed: parseInt(storage.get(STORAGE_KEYS.LAST_SPEED, 130), 10) || 130,
-    musicVolume: storage.get(STORAGE_KEYS.MUSIC_VOLUME, 0.45),
     finishedTopics: new Set(storage.get(STORAGE_KEYS.FINISHED_TOPICS, [])),
     savedWords: storage.get(STORAGE_KEYS.SAVED_WORDS, []),
     bestWpm: storage.get(STORAGE_KEYS.BEST_WPM, {}),
@@ -108,7 +106,6 @@
     readingBackBtn: document.getElementById("reading-back-btn"),
     readingSpeedSlider: document.getElementById("reading-speed-slider"),
     readingWpmVal: document.getElementById("reading-wpm-val"),
-    musicVolumeSlider: document.getElementById("music-volume"),
     countdownOverlay: document.getElementById("countdown-overlay"),
     countdownDigit: document.getElementById("countdown-digit"),
     countdownPrompt: document.getElementById("countdown-prompt"),
@@ -145,185 +142,23 @@
     wordsCountDesc: document.getElementById("words-count-desc"),
     savedWordsContainer: document.getElementById("saved-words-container"),
 
-    // Audio elements
-    lofiAudio: document.getElementById("lofi-audio"),
+    // Audio prompt fallback
     introAudio: document.getElementById("intro-audio")
   };
 
   /* ==========================================================================
-     3. AUDIO & SPEECH SYNTHESIS ENGINE
+     3. SPEECH SYNTHESIS & PROMPT VOICE ENGINE
      ========================================================================== */
   const audioController = {
-    fadeInterval: null,
-    webAudioCtx: null,
-    synthGainNode: null,
-    isProceduralPlaying: false,
-
     init() {
-      if (elements.lofiAudio) {
-        elements.lofiAudio.volume = 0;
-      }
-      elements.musicVolumeSlider.value = state.musicVolume;
-      elements.musicVolumeSlider.addEventListener("input", (e) => {
-        const vol = parseFloat(e.target.value);
-        state.musicVolume = vol;
-        storage.set(STORAGE_KEYS.MUSIC_VOLUME, vol);
-        if (state.isReading && !state.isPaused) {
-          audioController.setVolume(vol);
+      // Pre-warm SpeechSynthesis voice cache in supported browsers
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.getVoices();
+        if (window.speechSynthesis.onvoiceschanged !== undefined) {
+          window.speechSynthesis.onvoiceschanged = () => {
+            window.speechSynthesis.getVoices();
+          };
         }
-      });
-    },
-
-    setVolume(vol) {
-      if (elements.lofiAudio && !elements.lofiAudio.paused) {
-        elements.lofiAudio.volume = Math.max(0, Math.min(1, vol));
-      }
-      if (this.synthGainNode && this.webAudioCtx) {
-        this.synthGainNode.gain.setValueAtTime(vol * 0.25, this.webAudioCtx.currentTime);
-      }
-    },
-
-    fadeIn(targetVolume, durationMs = 1200) {
-      clearInterval(this.fadeInterval);
-      const audio = elements.lofiAudio;
-      const target = typeof targetVolume === "number" ? targetVolume : state.musicVolume;
-      const startVol = audio ? audio.volume : 0;
-      const steps = 24;
-      const stepTime = durationMs / steps;
-      let currentStep = 0;
-
-      // Try playing the audio element
-      const playPromise = audio ? audio.play() : Promise.reject();
-      playPromise.then(() => {
-        this.fadeInterval = setInterval(() => {
-          currentStep++;
-          const progress = currentStep / steps;
-          const newVol = startVol + (target - startVol) * progress;
-          audio.volume = Math.max(0, Math.min(1, newVol));
-          if (currentStep >= steps) {
-            clearInterval(this.fadeInterval);
-            audio.volume = target;
-          }
-        }, stepTime);
-      }).catch(() => {
-        // Fallback to Web Audio procedural synthesis if file playback is blocked
-        this.startProceduralLofi(target);
-      });
-    },
-
-    fadeOut(durationMs = 400) {
-      clearInterval(this.fadeInterval);
-      const audio = elements.lofiAudio;
-      if (!audio || audio.paused) {
-        this.stopProceduralLofi();
-        return;
-      }
-
-      const startVol = audio.volume;
-      const steps = 16;
-      const stepTime = durationMs / steps;
-      let currentStep = 0;
-
-      this.fadeInterval = setInterval(() => {
-        currentStep++;
-        const progress = currentStep / steps;
-        const newVol = startVol * (1 - progress);
-        audio.volume = Math.max(0, Math.min(1, newVol));
-        if (currentStep >= steps) {
-          clearInterval(this.fadeInterval);
-          audio.pause();
-          audio.volume = 0;
-        }
-      }, stepTime);
-
-      this.stopProceduralLofi();
-    },
-
-    stopImmediate() {
-      clearInterval(this.fadeInterval);
-      if (elements.lofiAudio) {
-        elements.lofiAudio.pause();
-        elements.lofiAudio.volume = 0;
-      }
-      this.stopProceduralLofi();
-    },
-
-    // Procedural Lo-Fi Synthesizer Fallback
-    startProceduralLofi(targetVolume) {
-      if (this.isProceduralPlaying) return;
-      try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
-        if (!this.webAudioCtx) {
-          this.webAudioCtx = new AudioContext();
-        }
-        if (this.webAudioCtx.state === "suspended") {
-          this.webAudioCtx.resume();
-        }
-
-        const ctx = this.webAudioCtx;
-        const masterGain = ctx.createGain();
-        masterGain.gain.setValueAtTime(0.001, ctx.currentTime);
-        masterGain.gain.linearRampToValueAtTime(targetVolume * 0.22, ctx.currentTime + 1.2);
-        masterGain.connect(ctx.destination);
-        this.synthGainNode = masterGain;
-
-        // Warm chord progression loop
-        const chords = [
-          [220.00, 261.63, 329.63, 392.00], // Am7
-          [174.61, 220.00, 261.63, 329.63], // Fmaj7
-          [130.81, 164.81, 196.00, 246.94], // Cmaj7
-          [196.00, 246.94, 293.66, 349.23]  // G7
-        ];
-
-        let chordIndex = 0;
-        const playNextChord = () => {
-          if (!this.isProceduralPlaying) return;
-          const currentNotes = chords[chordIndex % chords.length];
-          chordIndex++;
-
-          currentNotes.forEach((freq) => {
-            const osc = ctx.createOscillator();
-            const noteGain = ctx.createGain();
-            const filter = ctx.createBiquadFilter();
-
-            osc.type = "triangle";
-            osc.frequency.setValueAtTime(freq, ctx.currentTime);
-
-            filter.type = "lowpass";
-            filter.frequency.setValueAtTime(420, ctx.currentTime);
-
-            noteGain.gain.setValueAtTime(0.001, ctx.currentTime);
-            noteGain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 0.3);
-            noteGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2.8);
-
-            osc.connect(filter);
-            filter.connect(noteGain);
-            noteGain.connect(masterGain);
-
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + 2.9);
-          });
-
-          this.proceduralTimeout = setTimeout(playNextChord, 2600);
-        };
-
-        this.isProceduralPlaying = true;
-        playNextChord();
-      } catch (err) {
-        console.warn("Procedural audio unable to start:", err);
-      }
-    },
-
-    stopProceduralLofi() {
-      this.isProceduralPlaying = false;
-      if (this.proceduralTimeout) {
-        clearTimeout(this.proceduralTimeout);
-      }
-      if (this.synthGainNode && this.webAudioCtx) {
-        try {
-          this.synthGainNode.gain.linearRampToValueAtTime(0.0001, this.webAudioCtx.currentTime + 0.3);
-        } catch (_) {}
       }
     },
 
@@ -939,9 +774,6 @@
 
     let lastTimestamp = performance.now();
 
-    // Start background lofi music with gentle fade-in
-    audioController.fadeIn(state.musicVolume);
-
     // Start voice recording simultaneously with reading
     recorderController.start();
 
@@ -972,7 +804,6 @@
     if (!state.isReading || state.isPaused) return;
     state.isPaused = true;
     state.pausedAtTimestamp = performance.now();
-    audioController.fadeOut(350);
 
     if (elements.readingToggleBtn) {
       elements.readingToggleBtn.textContent = "Keep going";
@@ -992,8 +823,6 @@
     // Recalculate remaining scroll speed seamlessly
     recalculateScrollSpeed();
 
-    audioController.fadeIn(state.musicVolume, 800);
-
     if (elements.readingToggleBtn) {
       elements.readingToggleBtn.textContent = "Hold on";
     }
@@ -1009,7 +838,6 @@
 
   function restartReading() {
     if (state.scrollAnimId) cancelAnimationFrame(state.scrollAnimId);
-    audioController.stopImmediate();
     recorderController.stop();
     hideWordPanel();
     elements.teleprompterStage.scrollTo({ top: 0, left: 0, behavior: "instant" });
@@ -1119,7 +947,6 @@
     state.isPaused = false;
     if (state.scrollAnimId) cancelAnimationFrame(state.scrollAnimId);
 
-    audioController.fadeOut(400);
     recorderController.stop();
 
     const now = performance.now();
@@ -1242,10 +1069,14 @@
         deleteRecording(item.id);
       });
 
+      const actions = document.createElement("div");
+      actions.className = "rec-actions";
+      actions.appendChild(playBtn);
+      actions.appendChild(delBtn);
+
       row.appendChild(info);
       row.appendChild(duration);
-      row.appendChild(playBtn);
-      row.appendChild(delBtn);
+      row.appendChild(actions);
 
       elements.recordingsList.appendChild(row);
     });
@@ -1363,15 +1194,97 @@
     if (elements.navBrand) {
       elements.navBrand.addEventListener("click", (e) => {
         e.preventDefault();
-        if (state.isReading) audioController.stopImmediate();
+        switchModule("speaking");
         renderTopicsList();
         showScreen("topics");
       });
     }
 
+    // Module Tabs Switcher: Speaking <-> Listening
+    const tabSpeaking = document.getElementById("tab-speaking");
+    const tabListening = document.getElementById("tab-listening");
+    const moduleSpeaking = document.getElementById("module-speaking");
+    const moduleListening = document.getElementById("module-listening");
+    const historyBtn = document.getElementById("historyBtn");
+    const themeToggleBtn = document.getElementById("themeToggleBtn");
+
+    function switchModule(target) {
+      if (target === "listening") {
+        // Stop speaking teleprompter / recorder if active
+        state.isReading = false;
+        state.isPaused = false;
+        if (state.scrollAnimId) cancelAnimationFrame(state.scrollAnimId);
+        recorderController.stop();
+
+        if (tabSpeaking) {
+          tabSpeaking.classList.remove("active");
+          tabSpeaking.setAttribute("aria-selected", "false");
+        }
+        if (tabListening) {
+          tabListening.classList.add("active");
+          tabListening.setAttribute("aria-selected", "true");
+        }
+        if (moduleSpeaking) moduleSpeaking.classList.add("hidden");
+        if (moduleListening) moduleListening.classList.remove("hidden");
+
+        if (elements.navWordsBtn) elements.navWordsBtn.classList.add("hidden");
+        if (historyBtn) historyBtn.classList.remove("hidden");
+        if (themeToggleBtn) themeToggleBtn.classList.remove("hidden");
+
+        try { localStorage.setItem("active_app_module", "listening"); } catch (e) {}
+      } else {
+        // Stop listening audio speech synthesis if active
+        if (window.listeningPlayer && typeof window.listeningPlayer.stop === "function") {
+          window.listeningPlayer.stop();
+        }
+
+        if (tabListening) {
+          tabListening.classList.remove("active");
+          tabListening.setAttribute("aria-selected", "false");
+        }
+        if (tabSpeaking) {
+          tabSpeaking.classList.add("active");
+          tabSpeaking.setAttribute("aria-selected", "true");
+        }
+        if (moduleListening) moduleListening.classList.add("hidden");
+        if (moduleSpeaking) moduleSpeaking.classList.remove("hidden");
+
+        if (elements.navWordsBtn) elements.navWordsBtn.classList.remove("hidden");
+        if (historyBtn) historyBtn.classList.add("hidden");
+        if (themeToggleBtn) themeToggleBtn.classList.add("hidden");
+
+        try { localStorage.setItem("active_app_module", "speaking"); } catch (e) {}
+      }
+    }
+
+    if (tabSpeaking) {
+      tabSpeaking.addEventListener("click", () => switchModule("speaking"));
+    }
+    if (tabListening) {
+      tabListening.addEventListener("click", () => switchModule("listening"));
+    }
+
+    // Expose speakingApp controller to window
+    window.speakingApp = {
+      stopReading: function () {
+        state.isReading = false;
+        state.isPaused = false;
+        if (state.scrollAnimId) cancelAnimationFrame(state.scrollAnimId);
+        recorderController.stop();
+      },
+      switchModule: switchModule
+    };
+
+    // Restore last active module if user was previously in listening
+    try {
+      const savedModule = localStorage.getItem("active_app_module");
+      if (savedModule === "listening" || window.location.hash === "#listening") {
+        switchModule("listening");
+      }
+    } catch (e) {}
+
     if (elements.navWordsBtn) {
       elements.navWordsBtn.addEventListener("click", () => {
-        if (state.isReading) audioController.stopImmediate();
         renderSavedWordsScreen();
       });
     }
@@ -1384,7 +1297,7 @@
       });
     }
 
-    // Prepare & Reading Screen Speed Sliders (60 - 250 WPM)
+    // Prepare & Reading Screen Speed Sliders (60 - 260 WPM)
     if (elements.prepareSpeedSlider) {
       elements.prepareSpeedSlider.addEventListener("input", (e) => {
         updateSpeedUI(e.target.value);
@@ -1408,7 +1321,6 @@
       elements.readingBackBtn.addEventListener("click", () => {
         state.isReading = false;
         if (state.scrollAnimId) cancelAnimationFrame(state.scrollAnimId);
-        audioController.stopImmediate();
         recorderController.stop();
         renderTopicsList();
         showScreen("topics");
@@ -1563,7 +1475,7 @@
       }
     });
 
-    // Tab visibility change: Pause scroll & music if user switches tab
+    // Tab visibility change: Pause scroll if user switches tab
     document.addEventListener("visibilitychange", () => {
       if (document.hidden && state.isReading && !state.isPaused) {
         pauseReading();
@@ -1580,16 +1492,6 @@
     updateSpeedUI(state.currentSpeed);
     renderTopicsList();
     showScreen("topics");
-
-    // Pre-warm SpeechSynthesis voice cache in supported browsers
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.getVoices();
-      if (window.speechSynthesis.onvoiceschanged !== undefined) {
-        window.speechSynthesis.onvoiceschanged = () => {
-          window.speechSynthesis.getVoices();
-        };
-      }
-    }
   }
 
   if (document.readyState === "loading") {
