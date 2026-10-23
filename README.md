@@ -17,7 +17,10 @@ A responsive, typography-first web application designed to build English fluency
 
 ### 2. 🎧 Listening Practice (Listening Master)
 - **3 CEFR Levels:** Beginner (A1–A2), Intermediate (B1–B2), and Advanced (C1 / Academic).
-- **6 Comprehensive Lessons:** Real-world dialogues, guided tours, job interviews, and academic lectures.
+- **60 Comprehensive Lessons (20 per level):**
+  - **Beginner (20 lessons):** Daily dialogues (café, airport, library, hotel, taxi, train, etc.).
+  - **Intermediate (20 lessons):** Work meetings, job interviews, eco-parks, travel, tech reviews, and discussions.
+  - **Advanced (20 lessons):** Academic lectures (neurobiology, quantum computing, climate, AI labor economics, CRISPR).
 - **Natural Voice Synthesis:** Web Speech API audio synthesis with native accents (`en-GB`, `en-US`), speech rate control (0.75x, 0.9x, 1.0x, 1.25x), and audio waveform visualization.
 - **Shadowing Mode:** Sentence-by-sentence playback allowing learners to listen and shadow immediately.
 - **Interactive Quiz Engine:** Fill-in-the-blank and multiple-choice questions with intelligent text normalization, instant evaluation, and distractor analysis.
@@ -36,9 +39,13 @@ A responsive, typography-first web application designed to build English fluency
 ├── data.js               # 22 Speaking topics with texts and Uzbek glossary
 ├── package.json          # Project configuration & test runner scripts
 ├── test-listening.js     # Automated validator for listening tests & distractors
+├── build-beginner.js     # 20 Beginner lessons generator
+├── build-intermediate.js # 20 Intermediate lessons generator
+├── build-advanced.js     # 20 Advanced lessons generator
+├── assemble-listening-data.js # Listening data compiler
 ├── js/
 │   └── listening/
-│       ├── data.js         # 3 levels, 6 lessons, 27 questions & transcripts
+│       ├── data.js         # 3 levels, 60 lessons, 77+ questions & transcripts
 │       ├── audio-player.js # Web Speech API engine & playback controller
 │       ├── quiz-engine.js  # Answer evaluation, CEFR estimation & history
 │       └── app.js          # Listening module UI coordinator
@@ -55,7 +62,7 @@ A responsive, typography-first web application designed to build English fluency
 2. No build step, no npm install, and no backend server required.
 
 ### Running Automated Tests
-To validate the 27 listening quiz questions and fuzzy-matching logic:
+To validate all 60 listening lessons, quiz questions, and fuzzy-matching logic:
 ```bash
 node test-listening.js
 ```
