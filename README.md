@@ -6,8 +6,8 @@ A responsive, typography-first web application designed to build English fluency
 
 ## 🌟 Modules & Features
 
-### 1. 🗣️ Speaking Practice (English Aloud)
-- **10 Curated Motivational Texts (A1, A2, B1):** Emotionally resonant, conversational English addressed directly to the learner.
+### 1. Speaking Practice (English Aloud)
+- **22 Curated Motivational Texts (A1, A2, B1):** Emotionally resonant, conversational English addressed directly to the learner.
 - **Auto-Scrolling Teleprompter:** 60fps `requestAnimationFrame` teleprompter flow calibrated for natural speech cadence (~4 words per line).
 - **Subtle Eye Focus Guide:** Fixed horizontal focus line indicating the active reading focus zone.
 - **Adjustable Speed Bar:** Bottom slider controlling reading speed from 60 to 260 WPM in real-time.
@@ -33,7 +33,7 @@ A responsive, typography-first web application designed to build English fluency
 ├── style.css             # Main stylesheet & Speaking practice typography
 ├── listening.css         # Listening module styles, audio player & quiz UI
 ├── app.js                # Speaking app controller & module switcher
-├── data.js               # 10 Speaking topics with texts and Uzbek glossary
+├── data.js               # 22 Speaking topics with texts and Uzbek glossary
 ├── package.json          # Project configuration & test runner scripts
 ├── test-listening.js     # Automated validator for listening tests & distractors
 ├── js/
