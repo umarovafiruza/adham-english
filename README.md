@@ -38,6 +38,7 @@ A responsive, typography-first web application designed to build English fluency
 ├── app.js                # Speaking app controller & module switcher
 ├── data.js               # 22 Speaking topics with texts and Uzbek glossary
 ├── package.json          # Project configuration & test runner scripts
+├── server.js             # Lightweight zero-dependency local static server
 ├── test-listening.js     # Automated validator for listening tests & distractors
 ├── build-beginner.js     # 20 Beginner lessons generator
 ├── build-intermediate.js # 20 Intermediate lessons generator
@@ -58,8 +59,15 @@ A responsive, typography-first web application designed to build English fluency
 
 ## 🚀 How to Run
 
-1. Simply open `index.html` in any modern web browser (Chrome, Edge, Safari, Firefox).
-2. No build step, no npm install, and no backend server required.
+### Method 1: Local Server (Recommended for Audio & Microphone APIs)
+```bash
+npm start
+# or: node server.js
+```
+Then navigate to `http://localhost:3000` in your browser.
+
+### Method 2: Direct File Open
+Simply open `index.html` directly in any modern web browser (Chrome, Edge, Safari, Firefox).
 
 ### Running Automated Tests
 To validate all 60 listening lessons, quiz questions, and fuzzy-matching logic:
