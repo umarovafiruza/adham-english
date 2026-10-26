@@ -545,17 +545,18 @@ button {
   width: 100px;
 }
 
-/* Teleprompter Stage & Scrolling */
+/* Teleprompter Stage & Scrolling (100% GPU Sub-pixel Continuous Glide) */
 .teleprompter-stage {
   position: relative;
   height: 100vh;
   width: 100%;
-  overflow-y: scroll;
+  overflow: hidden; /* Eliminate native scroll quantization and line jumps */
   overflow-anchor: none;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; /* Firefox */
+  scrollbar-width: none;
   padding-top: 64px;
   padding-bottom: 72px;
+  user-select: none;
+  touch-action: pan-y;
 
   /* Teleprompter gradient: clean at top, focused in reading area, gentle fade on upcoming text below */
   mask-image: linear-gradient(
@@ -577,7 +578,7 @@ button {
 }
 
 .teleprompter-stage::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
+  display: none;
 }
 
 .teleprompter-flow {
@@ -593,6 +594,10 @@ button {
   color: var(--text);
   user-select: text;
   word-spacing: 0.04em;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  transition: none !important; /* Critical: RAF transform must never have CSS ease latency */
 }
 
 /* Eye Focus Horizontal Guide Line */
@@ -1164,7 +1169,7 @@ button {
   }
 
   .teleprompter-flow {
-    padding: 24px 12px 85vh;
+    padding: calc((100vh - 120px) * 0.35 - 20px) 12px 85vh;
     font-size: 23px;
     line-height: 1.8;
   }
@@ -1249,7 +1254,7 @@ button {
   }
 
   .teleprompter-flow {
-    padding: 20px 8px 85vh;
+    padding: calc((100vh - 120px) * 0.35 - 20px) 8px 85vh;
     font-size: 21px;
     line-height: 1.75;
   }

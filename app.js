@@ -65,6 +65,7 @@
     readingStartTimestamp: 0,
     pausedAtTimestamp: 0,
     totalPauseDuration: 0,
+    currentScrollOffset: 0,
     currentScrollTop: 0,
     targetScrollDistance: 0,
     scrollSpeedPxPerSec: 0,
@@ -604,10 +605,11 @@
 
     showScreen("reading");
 
-    // Scroll to start position (very beginning at the top)
-    elements.teleprompterStage.scrollTo({ top: 0, left: 0, behavior: "instant" });
-    elements.teleprompterStage.scrollTop = 0;
-    state.currentScrollTop = 0;
+    // Scroll & GPU transform to start position (very beginning at the top)
+    applyTeleprompterOffset(0);
+    if (elements.teleprompterStage) {
+      elements.teleprompterStage.scrollTop = 0;
+    }
 
     // Start 3-2-1 Countdown
     runCountdown(() => {
@@ -720,10 +722,19 @@
     }, 950);
   }
 
+  function applyTeleprompterOffset(offsetPx) {
+    state.currentScrollOffset = Math.max(0, offsetPx);
+    state.currentScrollTop = state.currentScrollOffset; // Sync for metrics and resize
+    if (elements.teleprompterFlow) {
+      elements.teleprompterFlow.style.transform = `translate3d(0, ${-state.currentScrollOffset}px, 0)`;
+    }
+  }
+
   function recalculateScrollSpeed() {
     if (!state.currentTopic) return;
     const stage = elements.teleprompterStage;
-    if (!stage) return;
+    const flowEl = elements.teleprompterFlow;
+    if (!stage || !flowEl) return;
 
     const topic = state.currentTopic;
     const wordCount = topic.text.trim().split(/\s+/).length;
@@ -732,26 +743,15 @@
     // Total target reading time for the entire text in seconds
     const fullDurationSec = (wordCount / targetWpm) * 60;
 
-    // Measure exact scroll distance so all lines pass comfortably through view
-    const flowEl = elements.teleprompterFlow;
-    const textBody = flowEl ? flowEl.querySelector(".teleprompter-text-body") : null;
-    const textHeight = textBody ? textBody.offsetHeight : (flowEl ? flowEl.offsetHeight : 600);
-    const textTop = textBody ? textBody.offsetTop : 40;
+    // Total distance needed for entire text to glide smoothly through reading focus
+    const textBody = flowEl.querySelector(".teleprompter-text-body");
+    const textHeight = textBody ? textBody.offsetHeight : flowEl.offsetHeight;
 
-    // Scroll until the last line reaches the comfortable reading focus area (~35% from viewport top)
-    const focusY = stage.clientHeight * 0.35;
-    const computedDistance = textTop + textHeight - focusY;
-    state.targetScrollDistance = Math.max(250, computedDistance);
+    // Scroll until the last line comfortably passes the eye focus guide
+    state.targetScrollDistance = Math.max(300, textHeight + 100);
 
-    // Speed formula based on remaining distance and remaining words fraction
-    const currentPos = Math.max(0, state.currentScrollTop);
-    const remainingDist = Math.max(10, state.targetScrollDistance - currentPos);
-    const fractionRemaining = state.targetScrollDistance > 0 
-      ? Math.max(0.05, remainingDist / state.targetScrollDistance)
-      : 1;
-    const remainingDurationSec = Math.max(1, fullDurationSec * fractionRemaining);
-
-    state.scrollSpeedPxPerSec = remainingDist / remainingDurationSec;
+    // Uniform linear velocity (pixels/second): 100% constant, uninterrupted continuous motion
+    state.scrollSpeedPxPerSec = state.targetScrollDistance / Math.max(1, fullDurationSec);
   }
 
   function beginTeleprompterScrolling() {
@@ -765,9 +765,8 @@
     state.totalPauseDuration = 0;
 
     // Ensure starting strictly from the beginning (0)
-    stage.scrollTo({ top: 0, left: 0, behavior: "instant" });
-    stage.scrollTop = 0;
-    state.currentScrollTop = 0;
+    applyTeleprompterOffset(0);
+    if (stage) stage.scrollTop = 0;
 
     // Accurately compute scroll distance and speed
     recalculateScrollSpeed();
@@ -781,12 +780,13 @@
       if (!state.isReading) return;
 
       if (!state.isPaused) {
-        const dt = (currentTimestamp - lastTimestamp) / 1000;
-        state.currentScrollTop += state.scrollSpeedPxPerSec * dt;
-        stage.scrollTop = state.currentScrollTop;
+        // Safe frame delta clamped to 50ms to prevent skips
+        const dt = Math.min((currentTimestamp - lastTimestamp) / 1000, 0.05);
+        state.currentScrollOffset += state.scrollSpeedPxPerSec * dt;
+        applyTeleprompterOffset(state.currentScrollOffset);
 
         // Check completion condition
-        if (state.currentScrollTop >= state.targetScrollDistance) {
+        if (state.currentScrollOffset >= state.targetScrollDistance) {
           finishReadingSession();
           return;
         }
@@ -817,10 +817,7 @@
     state.totalPauseDuration += pausedDuration;
     state.isPaused = false;
 
-    // Sync scroll position in case of user manual drag
-    state.currentScrollTop = elements.teleprompterStage.scrollTop;
-
-    // Recalculate remaining scroll speed seamlessly
+    // Recalculate speed with fresh duration
     recalculateScrollSpeed();
 
     if (elements.readingToggleBtn) {
@@ -840,9 +837,10 @@
     if (state.scrollAnimId) cancelAnimationFrame(state.scrollAnimId);
     recorderController.stop();
     hideWordPanel();
-    elements.teleprompterStage.scrollTo({ top: 0, left: 0, behavior: "instant" });
-    elements.teleprompterStage.scrollTop = 0;
-    state.currentScrollTop = 0;
+    applyTeleprompterOffset(0);
+    if (elements.teleprompterStage) {
+      elements.teleprompterStage.scrollTop = 0;
+    }
     startReadingFlow();
   }
 
@@ -1339,26 +1337,37 @@
       });
     }
 
-    // User manual scroll detection: pause autoscroll when user touches or wheels
+    // Smooth manual adjustment via wheel or touch swipe without stopping autoscroll
     if (elements.teleprompterStage) {
-      let isUserInteracting = false;
-
-      const onUserScrollStart = () => {
-        if (state.isReading && !state.isPaused) {
-          isUserInteracting = true;
-          pauseReading();
+      elements.teleprompterStage.addEventListener("wheel", (e) => {
+        if (state.isReading) {
+          applyTeleprompterOffset(state.currentScrollOffset + e.deltaY);
         }
-      };
+      }, { passive: true });
 
-      elements.teleprompterStage.addEventListener("wheel", onUserScrollStart, { passive: true });
-      elements.teleprompterStage.addEventListener("touchstart", onUserScrollStart, { passive: true });
-      elements.teleprompterStage.addEventListener("pointerdown", onUserScrollStart, { passive: true });
+      let touchStartY = 0;
+      let touchStartOffset = 0;
+      let isTouching = false;
 
-      // Sync scroll position
-      elements.teleprompterStage.addEventListener("scroll", () => {
-        if (state.isPaused) {
-          state.currentScrollTop = elements.teleprompterStage.scrollTop;
+      elements.teleprompterStage.addEventListener("touchstart", (e) => {
+        if (e.touches && e.touches.length > 0) {
+          isTouching = true;
+          touchStartY = e.touches[0].clientY;
+          touchStartOffset = state.currentScrollOffset;
         }
+      }, { passive: true });
+
+      elements.teleprompterStage.addEventListener("touchmove", (e) => {
+        if (!isTouching || !e.touches || e.touches.length === 0) return;
+        const currentY = e.touches[0].clientY;
+        const diffY = touchStartY - currentY;
+        if (state.isReading) {
+          applyTeleprompterOffset(touchStartOffset + diffY);
+        }
+      }, { passive: true });
+
+      elements.teleprompterStage.addEventListener("touchend", () => {
+        isTouching = false;
       }, { passive: true });
     }
 
@@ -1422,13 +1431,11 @@
         if (state.currentScreen === "reading" && state.targetScrollDistance > 0) {
           const progressFraction = Math.min(
             1,
-            Math.max(0, state.currentScrollTop / state.targetScrollDistance)
+            Math.max(0, state.currentScrollOffset / state.targetScrollDistance)
           );
           recalculateScrollSpeed();
-          state.currentScrollTop = progressFraction * state.targetScrollDistance;
-          if (elements.teleprompterStage) {
-            elements.teleprompterStage.scrollTop = state.currentScrollTop;
-          }
+          state.currentScrollOffset = progressFraction * state.targetScrollDistance;
+          applyTeleprompterOffset(state.currentScrollOffset);
           if (state.isReading && !state.isPaused) {
             recalculateScrollSpeed();
           }
