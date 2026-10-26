@@ -1,27 +1,31 @@
 /**
- * Listening Master - Audio Player Engine
- * Web Speech API asosidagi tabiiy ovoz sintezi,
- * tezlikni boshqarish (0.75x - 1.25x), jumlama-jumla sinxronizatsiya
- * va Shadowing rejimi.
+ * Professional Listening Practice — Audio Player Engine
+ * High-fidelity Web Speech API synthesizer with natural female voice prioritization,
+ * interactive seekable progress bar, volume controls, replay, speed multipliers (0.75x - 1.25x),
+ * and dynamic waveform visualization.
  */
 
 class AudioPlayerEngine {
   constructor() {
-    this.synth = window.speechSynthesis || null;
+    this.synth = typeof window !== "undefined" ? window.speechSynthesis : null;
     this.voices = [];
-    this.currentLesson = null;
+    this.currentExercise = null;
     this.currentSentenceIndex = 0;
     this.isPlaying = false;
     this.isPaused = false;
     this.playbackRate = 1.0;
     this.volume = 1.0;
-    this.shadowingMode = false; // Har bir jumlada to'xtash
-    this.onSentenceChange = null;
-    this.onStateChange = null;
-    this.onProgressUpdate = null;
-    this.progressInterval = null;
-    this.elapsedSeconds = 0;
-    this.estimatedTotalSeconds = 60;
+    this.currentTime = 0; // seconds
+    this.duration = 35; // seconds estimated
+    this.timerId = null;
+    this.activeUtterance = null;
+    this.isSeeking = false;
+
+    // Callbacks
+    this.onStateChange = null;     // (state: 'loading'|'playing'|'paused'|'stopped'|'ended'|'error') => {}
+    this.onTimeUpdate = null;      // (currentTime, duration, percent) => {}
+    this.onSentenceChange = null;  // (sentenceIndex) => {}
+    this.onError = null;           // (errorMessage) => {}
 
     this.initVoices();
   }
@@ -29,69 +33,88 @@ class AudioPlayerEngine {
   initVoices() {
     if (!this.synth) return;
 
-    const loadVoices = () => {
-      this.voices = this.synth.getVoices();
+    const populateVoices = () => {
+      this.voices = this.synth.getVoices() || [];
     };
 
-    loadVoices();
+    populateVoices();
     if (this.synth.onvoiceschanged !== undefined) {
-      this.synth.onvoiceschanged = loadVoices;
+      this.synth.onvoiceschanged = populateVoices;
     }
   }
 
-  getBestVoice(accent, gender) {
+  /**
+   * Selects highest-quality natural female English voice available on system
+   */
+  getBestVoice(accent) {
     if (!this.voices || this.voices.length === 0) {
-      this.voices = this.synth ? this.synth.getVoices() : [];
+      if (this.synth) this.voices = this.synth.getVoices() || [];
     }
 
-    const langTarget = accent && accent.includes("US") ? "en-US" : "en-GB";
+    const isBritish = accent && /GB|British/i.test(accent);
+    const targetLang = isBritish ? "en-GB" : "en-US";
 
-    // 1. Birinchi navbatda aniq til va tabiiy nomlar bo'yicha qidirish
-    const matched = this.voices.filter(v => v.lang && (v.lang === langTarget || v.lang.startsWith(langTarget.slice(0, 2))));
-
-    // Google, Microsoft yoki Natural ovozlarni afzal ko'rish
-    const premiumVoice = matched.find(v => 
-      v.name.includes("Natural") || 
-      v.name.includes("Online") || 
-      v.name.includes("Google") || 
-      v.name.includes("Neural") ||
-      (gender === "female" && (v.name.includes("Female") || v.name.includes("Zira") || v.name.includes("Susan") || v.name.includes("Samantha"))) ||
-      (gender === "male" && (v.name.includes("Male") || v.name.includes("David") || v.name.includes("George")))
+    // 1. Natural Neural / Online Female voices
+    const naturalFemale = this.voices.find(v =>
+      v.lang && (v.lang === targetLang || v.lang.startsWith(targetLang.slice(0, 2))) &&
+      /natural|online|neural|google|samantha|zira|jenny|susan|karen|victoria/i.test(v.name) &&
+      !/male|david|george|mark/i.test(v.name)
     );
+    if (naturalFemale) return naturalFemale;
 
-    if (premiumVoice) return premiumVoice;
-    if (matched.length > 0) return matched[0];
+    // 2. Any female English voice
+    const anyFemale = this.voices.find(v =>
+      v.lang && v.lang.startsWith("en") &&
+      /female|zira|samantha|karen|victoria|jenny/i.test(v.name)
+    );
+    if (anyFemale) return anyFemale;
 
-    // Umumiy inglizcha ovoz
+    // 3. Any target accent voice
+    const accentVoice = this.voices.find(v => v.lang === targetLang);
+    if (accentVoice) return accentVoice;
+
+    // 4. Any English voice
     const anyEnglish = this.voices.find(v => v.lang && v.lang.startsWith("en"));
-    return anyEnglish || (this.voices.length > 0 ? this.voices[0] : null);
+    if (anyEnglish) return anyEnglish;
+
+    return this.voices.length > 0 ? this.voices[0] : null;
   }
 
-  loadLesson(lesson) {
+  loadExercise(exercise) {
     this.stop();
-    this.currentLesson = lesson;
+    this.currentExercise = exercise;
     this.currentSentenceIndex = 0;
-    this.playbackRate = lesson.audioSpeedDefault || 1.0;
-    this.elapsedSeconds = 0;
+    this.currentTime = 0;
+    this.duration = exercise.durationSec || 35;
+    this.playbackRate = 1.0;
+    this.isPaused = false;
+    this.isPlaying = false;
 
-    // Taxminiy davomiylikni hisoblash (so'zlar soniga qarab)
-    const totalWords = lesson.sentences.reduce((acc, s) => acc + s.text.split(" ").length, 0);
-    // O'rtacha 130 so'z/minut tezlikda
-    this.estimatedTotalSeconds = Math.max(30, Math.round((totalWords / 130) * 60));
-
-    this.notifyState();
-    this.notifyProgress();
+    if (this.onTimeUpdate) {
+      this.onTimeUpdate(0, this.duration, 0);
+    }
+    if (this.onStateChange) {
+      this.onStateChange("stopped");
+    }
   }
 
   setRate(rate) {
-    this.playbackRate = parseFloat(rate);
+    this.playbackRate = Math.max(0.5, Math.min(2.0, parseFloat(rate) || 1.0));
     if (this.isPlaying && !this.isPaused) {
-      // Joriy jumlani yangi tezlikda qayta boshlash
+      // Re-trigger current playback at new speed seamlessly
       this.playSentence(this.currentSentenceIndex);
     }
   }
 
+  setVolume(vol) {
+    this.volume = Math.max(0, Math.min(1, parseFloat(vol) || 1.0));
+    if (this.activeUtterance) {
+      this.activeUtterance.volume = this.volume;
+    }
+  }
+
   togglePlay() {
+    if (!this.currentExercise) return;
     if (this.isPlaying) {
       if (this.isPaused) {
         this.resume();
@@ -104,206 +127,245 @@ class AudioPlayerEngine {
   }
 
   play() {
-    if (!this.synth || !this.currentLesson) return;
+    if (!this.currentExercise) return;
 
     if (this.isPaused) {
       this.resume();
       return;
     }
 
-    this.isPlaying = true;
-    this.isPaused = false;
-    this.startProgressTimer();
-    this.playSentence(this.currentSentenceIndex);
-    this.notifyState();
-  }
-
-  pause() {
-    if (!this.synth) return;
-    this.isPaused = true;
-    this.synth.pause();
-    this.stopProgressTimer();
-    this.notifyState();
-  }
-
-  resume() {
-    if (!this.synth) return;
-    this.isPaused = false;
-    this.synth.resume();
-    this.startProgressTimer();
-    this.notifyState();
-  }
-
-  stop() {
-    if (!this.synth) return;
-    this.synth.cancel();
-    this.isPlaying = false;
-    this.isPaused = false;
-    this.currentSentenceIndex = 0;
-    this.elapsedSeconds = 0;
-    this.stopProgressTimer();
-    this.notifyState();
-    this.notifyProgress();
-    if (this.onSentenceChange) {
-      this.onSentenceChange(-1, null);
-    }
-  }
-
-  restart() {
-    this.stop();
-    setTimeout(() => {
-      this.play();
-    }, 200);
-  }
-
-  playSentence(index) {
-    if (!this.synth || !this.currentLesson) return;
-    if (index >= this.currentLesson.sentences.length) {
-      // Audio yakunlandi
-      this.isPlaying = false;
-      this.isPaused = false;
-      this.stopProgressTimer();
-      this.elapsedSeconds = this.estimatedTotalSeconds;
-      this.notifyState();
-      this.notifyProgress();
-      if (this.onSentenceChange) this.onSentenceChange(-1, null);
+    if (!this.synth) {
+      this.handleSpeechError("SpeechSynthesis not available in this browser environment.");
       return;
     }
 
-    this.synth.cancel();
-    this.currentSentenceIndex = index;
-    const sentenceObj = this.currentLesson.sentences[index];
+    this.isPlaying = true;
+    this.isPaused = false;
+    if (this.onStateChange) this.onStateChange("playing");
 
-    const utterance = new SpeechSynthesisUtterance(sentenceObj.text);
+    // If already at end, restart from beginning
+    if (this.currentTime >= this.duration || this.currentSentenceIndex >= this.currentExercise.sentences.length) {
+      this.currentSentenceIndex = 0;
+      this.currentTime = 0;
+    }
+
+    this.startProgressTimer();
+    this.playSentence(this.currentSentenceIndex);
+  }
+
+  playSentence(index) {
+    if (!this.currentExercise || !this.currentExercise.sentences) return;
+    if (index >= this.currentExercise.sentences.length) {
+      this.finishPlayback();
+      return;
+    }
+
+    this.currentSentenceIndex = index;
+    const sentence = this.currentExercise.sentences[index];
+
+    if (!this.synth) return;
+
+    this.synth.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(sentence.text);
+    this.activeUtterance = utterance;
+
+    const voice = this.getBestVoice(this.currentExercise.accent);
+    if (voice) {
+      utterance.voice = voice;
+      utterance.lang = voice.lang || "en-US";
+    } else {
+      utterance.lang = "en-US";
+    }
+
     utterance.rate = this.playbackRate;
     utterance.pitch = 1.0;
     utterance.volume = this.volume;
 
-    const voice = this.getBestVoice(this.currentLesson.accent, this.currentLesson.voiceGender);
-    if (voice) {
-      utterance.voice = voice;
-      utterance.lang = voice.lang || "en-US";
-    }
-
     utterance.onstart = () => {
       if (this.onSentenceChange) {
-        this.onSentenceChange(this.currentSentenceIndex, sentenceObj);
+        this.onSentenceChange(index);
       }
     };
 
     utterance.onend = () => {
       if (!this.isPlaying || this.isPaused) return;
 
-      if (this.shadowingMode) {
-        // Shadowing rejimida har bir jumlada to'xtab turish
-        this.isPaused = true;
-        this.notifyState();
-        return;
+      const nextIdx = index + 1;
+      if (nextIdx < this.currentExercise.sentences.length) {
+        // Natural micro-pause between dialogue turns (300ms)
+        setTimeout(() => {
+          if (this.isPlaying && !this.isPaused) {
+            this.playSentence(nextIdx);
+          }
+        }, 300);
+      } else {
+        this.finishPlayback();
       }
-
-      // Kichik tabiiy pauza (400ms) keyin keyingi jumlaga o'tish
-      setTimeout(() => {
-        if (this.isPlaying && !this.isPaused) {
-          this.playSentence(this.currentSentenceIndex + 1);
-        }
-      }, 400);
     };
 
     utterance.onerror = (e) => {
-      console.warn("Speech error:", e);
-      if (this.isPlaying && !this.isPaused) {
-        setTimeout(() => this.playSentence(this.currentSentenceIndex + 1), 300);
+      if (e.error === "canceled" || e.error === "interrupted") {
+        return; // Normal cancel during seek or stop
+      }
+      console.warn("TTS sentence error:", e);
+      // Advance to next sentence on minor error
+      const nextIdx = index + 1;
+      if (nextIdx < this.currentExercise.sentences.length) {
+        this.playSentence(nextIdx);
+      } else {
+        this.finishPlayback();
       }
     };
 
-    this.synth.speak(utterance);
+    try {
+      this.synth.speak(utterance);
+    } catch (err) {
+      this.handleSpeechError("Audio synthesis error: " + err.message);
+    }
   }
 
-  nextSentence() {
-    if (!this.currentLesson) return;
-    const nextIdx = Math.min(this.currentSentenceIndex + 1, this.currentLesson.sentences.length - 1);
-    this.currentSentenceIndex = nextIdx;
+  pause() {
+    if (!this.isPlaying || this.isPaused) return;
+    this.isPaused = true;
+    this.stopProgressTimer();
+
+    if (this.synth) {
+      this.synth.pause();
+    }
+
+    if (this.onStateChange) this.onStateChange("paused");
+  }
+
+  resume() {
+    if (!this.isPlaying || !this.isPaused) return;
     this.isPaused = false;
-    this.isPlaying = true;
-    this.playSentence(nextIdx);
-    this.notifyState();
+    this.startProgressTimer();
+
+    if (this.synth) {
+      if (this.synth.paused) {
+        this.synth.resume();
+      } else {
+        this.playSentence(this.currentSentenceIndex);
+      }
+    }
+
+    if (this.onStateChange) this.onStateChange("playing");
   }
 
-  prevSentence() {
-    if (!this.currentLesson) return;
-    const prevIdx = Math.max(0, this.currentSentenceIndex - 1);
-    this.currentSentenceIndex = prevIdx;
+  stop() {
+    this.isPlaying = false;
     this.isPaused = false;
-    this.isPlaying = true;
-    this.playSentence(prevIdx);
-    this.notifyState();
+    this.currentSentenceIndex = 0;
+    this.currentTime = 0;
+    this.stopProgressTimer();
+
+    if (this.synth) {
+      this.synth.cancel();
+    }
+
+    this.activeUtterance = null;
+
+    if (this.onTimeUpdate) {
+      this.onTimeUpdate(0, this.duration, 0);
+    }
+    if (this.onStateChange) {
+      this.onStateChange("stopped");
+    }
   }
 
-  seekPercent(percent) {
-    if (!this.currentLesson) return;
-    const total = this.currentLesson.sentences.length;
-    const targetIdx = Math.min(total - 1, Math.max(0, Math.floor((percent / 100) * total)));
-    this.currentSentenceIndex = targetIdx;
-    this.elapsedSeconds = Math.round((percent / 100) * this.estimatedTotalSeconds);
-    this.notifyProgress();
-    if (this.isPlaying) {
-      this.playSentence(targetIdx);
+  replay() {
+    this.stop();
+    this.play();
+  }
+
+  seekToPercent(percent) {
+    if (!this.currentExercise || !this.currentExercise.sentences) return;
+    const clampedPercent = Math.max(0, Math.min(1, percent));
+    this.currentTime = clampedPercent * this.duration;
+
+    // Estimate matching sentence index
+    const totalSentences = this.currentExercise.sentences.length;
+    const targetIndex = Math.min(
+      totalSentences - 1,
+      Math.floor(clampedPercent * totalSentences)
+    );
+
+    const wasPlaying = this.isPlaying && !this.isPaused;
+
+    if (this.synth) {
+      this.synth.cancel();
+    }
+
+    this.currentSentenceIndex = targetIndex;
+
+    if (this.onTimeUpdate) {
+      this.onTimeUpdate(this.currentTime, this.duration, clampedPercent * 100);
+    }
+
+    if (wasPlaying) {
+      this.playSentence(targetIndex);
+    } else {
+      if (this.onSentenceChange) {
+        this.onSentenceChange(targetIndex);
+      }
     }
   }
 
   startProgressTimer() {
     this.stopProgressTimer();
-    this.progressInterval = setInterval(() => {
-      if (this.isPlaying && !this.isPaused) {
-        if (this.elapsedSeconds < this.estimatedTotalSeconds) {
-          this.elapsedSeconds++;
-          this.notifyProgress();
-        }
+    const intervalMs = 100;
+
+    this.timerId = setInterval(() => {
+      if (!this.isPlaying || this.isPaused) return;
+
+      this.currentTime += (intervalMs / 1000) * this.playbackRate;
+
+      if (this.currentTime >= this.duration) {
+        this.currentTime = this.duration;
       }
-    }, 1000);
+
+      const percent = (this.currentTime / Math.max(1, this.duration)) * 100;
+      if (this.onTimeUpdate) {
+        this.onTimeUpdate(this.currentTime, this.duration, percent);
+      }
+    }, intervalMs);
   }
 
   stopProgressTimer() {
-    if (this.progressInterval) {
-      clearInterval(this.progressInterval);
-      this.progressInterval = null;
+    if (this.timerId) {
+      clearInterval(this.timerId);
+      this.timerId = null;
     }
   }
 
-  notifyState() {
+  finishPlayback() {
+    this.stopProgressTimer();
+    this.currentTime = this.duration;
+    this.isPlaying = false;
+    this.isPaused = false;
+    this.activeUtterance = null;
+
+    if (this.onTimeUpdate) {
+      this.onTimeUpdate(this.duration, this.duration, 100);
+    }
     if (this.onStateChange) {
-      this.onStateChange({
-        isPlaying: this.isPlaying,
-        isPaused: this.isPaused,
-        rate: this.playbackRate,
-        sentenceIndex: this.currentSentenceIndex,
-        totalSentences: this.currentLesson ? this.currentLesson.sentences.length : 0,
-        shadowingMode: this.shadowingMode
-      });
+      this.onStateChange("ended");
     }
   }
 
-  notifyProgress() {
-    if (this.onProgressUpdate) {
-      const percent = this.estimatedTotalSeconds > 0 
-        ? Math.min(100, (this.elapsedSeconds / this.estimatedTotalSeconds) * 100)
-        : 0;
-      this.onProgressUpdate({
-        currentTimeStr: this.formatTime(this.elapsedSeconds),
-        totalTimeStr: this.formatTime(this.estimatedTotalSeconds),
-        percent: percent
-      });
+  handleSpeechError(msg) {
+    console.error("AudioPlayerEngine Error:", msg);
+    this.stop();
+    if (this.onError) {
+      this.onError(msg);
     }
-  }
-
-  formatTime(secs) {
-    const m = Math.floor(secs / 60);
-    const s = Math.floor(secs % 60);
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
+    if (this.onStateChange) {
+      this.onStateChange("error");
+    }
   }
 }
 
-// Global yoki modul eksporti
-if (typeof module !== 'undefined' && module.exports) {
+if (typeof module !== "undefined" && module.exports) {
   module.exports = { AudioPlayerEngine };
 }

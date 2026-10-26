@@ -1226,6 +1226,8 @@
         if (moduleListening) moduleListening.classList.remove("hidden");
 
         if (elements.navWordsBtn) elements.navWordsBtn.classList.add("hidden");
+        const lHistoryBtn = document.getElementById("listeningHistoryBtn");
+        if (lHistoryBtn) lHistoryBtn.classList.remove("hidden");
         if (historyBtn) historyBtn.classList.remove("hidden");
         if (themeToggleBtn) themeToggleBtn.classList.remove("hidden");
 
@@ -1248,6 +1250,8 @@
         if (moduleSpeaking) moduleSpeaking.classList.remove("hidden");
 
         if (elements.navWordsBtn) elements.navWordsBtn.classList.remove("hidden");
+        const lHistoryBtn = document.getElementById("listeningHistoryBtn");
+        if (lHistoryBtn) lHistoryBtn.classList.add("hidden");
         if (historyBtn) historyBtn.classList.add("hidden");
         if (themeToggleBtn) themeToggleBtn.classList.add("hidden");
 

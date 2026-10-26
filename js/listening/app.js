@@ -1,497 +1,870 @@
 /**
- * Listening Master - Asosiy Dastur Boshqaruvchisi (App Controller)
+ * Professional Listening Practice — UI Coordinator
+ * Controls catalog filtering, audio player controls, 8-question step & quick-jump workflow,
+ * unanswered question confirmation, instant scoring, mistake review, and progress history.
  */
 
-document.addEventListener("DOMContentLoaded", () => {
-  // Ob'yektlarni initsializatsiya qilish
+(function () {
+  "use strict";
+
+  // Data & Engines
+  const exercises = typeof LISTENING_EXERCISES !== "undefined" ? LISTENING_EXERCISES : [];
+  const parts = typeof LISTENING_PARTS !== "undefined" ? LISTENING_PARTS : [];
+  const levels = typeof LISTENING_LEVELS !== "undefined" ? LISTENING_LEVELS : [];
+
   const player = new AudioPlayerEngine();
   const quiz = new QuizEngine();
 
-  // Holatlar (State)
-  let activeLevelId = "beginner";
-  let activeLesson = null;
-  let userAnswers = {};
-  let isEvaluated = false;
+  // Runtime State
+  const state = {
+    activeView: "catalog", // 'catalog' | 'exercise' | 'results'
+    selectedPart: "all",
+    selectedLevel: "all",
+    activeExercise: null,
+    currentQuestionIndex: 0, // 0 to 7
+    userAnswers: {},
+    currentTestSummary: null,
+    isTranscriptVisible: false,
+    orderingBuffers: {} // temporary buffer for ordering questions
+  };
 
-  // DOM elementlari
-  const themeToggleBtn = document.getElementById("themeToggleBtn");
-  const themeIcon = document.getElementById("themeIcon");
-  const levelTabs = document.getElementById("levelTabs");
-  const lessonsGrid = document.getElementById("lessonsGrid");
+  // DOM Elements
+  const elements = {
+    // Views
+    catalogView: document.getElementById("listeningCatalogView"),
+    exerciseView: document.getElementById("listeningExerciseView"),
+    resultsView: document.getElementById("listeningResultsView"),
 
-  // Player DOM
-  const playerTitle = document.getElementById("playerTitle");
-  const playerMeta = document.getElementById("playerMeta");
-  const playBtn = document.getElementById("playBtn");
-  const prevBtn = document.getElementById("prevBtn");
-  const nextBtn = document.getElementById("nextBtn");
-  const restartBtn = document.getElementById("restartBtn");
-  const speedBtns = document.querySelectorAll(".speed-btn");
-  const shadowingCheckbox = document.getElementById("shadowingCheckbox");
-  const waveVisualizer = document.getElementById("waveVisualizer");
-  const progressTrack = document.getElementById("progressTrack");
-  const progressFill = document.getElementById("progressFill");
-  const currentTimeLabel = document.getElementById("currentTimeLabel");
-  const totalTimeLabel = document.getElementById("totalTimeLabel");
+    // Catalog UI
+    statsTotalAvailable: document.getElementById("statsTotalAvailable"),
+    statsCompletedCount: document.getElementById("statsCompletedCount"),
+    statsAvgScore: document.getElementById("statsAvgScore"),
+    partFiltersContainer: document.getElementById("partFiltersContainer"),
+    levelFiltersContainer: document.getElementById("levelFiltersContainer"),
+    exercisesGrid: document.getElementById("exercisesGrid"),
 
-  // Quiz DOM
-  const questionsContainer = document.getElementById("questionsContainer");
-  const checkAnswersBtn = document.getElementById("checkAnswersBtn");
-  const resetQuizBtn = document.getElementById("resetQuizBtn");
-  const quizScoreBadge = document.getElementById("quizScoreBadge");
-  const toggleExtraBtn = document.getElementById("toggleExtraBtn");
+    // Exercise Top Bar
+    exerciseBackBtn: document.getElementById("exerciseBackBtn"),
+    exerciseMetaCefr: document.getElementById("exerciseMetaCefr"),
+    exerciseMetaPart: document.getElementById("exerciseMetaPart"),
+    exerciseMetaTitle: document.getElementById("exerciseMetaTitle"),
 
-  // Extra Panels
-  const extraSection = document.getElementById("extraSection");
-  const transcriptList = document.getElementById("transcriptList");
-  const vocabList = document.getElementById("vocabList");
+    // Player UI
+    playerCard: document.getElementById("listeningPlayerCard"),
+    playerTitle: document.getElementById("playerTitle"),
+    playerMeta: document.getElementById("playerMeta"),
+    playBtn: document.getElementById("playBtn"),
+    replayBtn: document.getElementById("replayBtn"),
+    progressTrack: document.getElementById("progressTrack"),
+    progressFill: document.getElementById("progressFill"),
+    currentTimeLabel: document.getElementById("currentTimeLabel"),
+    totalTimeLabel: document.getElementById("totalTimeLabel"),
+    speedBtns: document.querySelectorAll(".speed-btn"),
+    volumeSlider: document.getElementById("volumeSlider"),
 
-  // Results Modal
-  const resultsModal = document.getElementById("resultsModal");
-  const modalScorePercent = document.getElementById("modalScorePercent");
-  const modalCorrectCount = document.getElementById("modalCorrectCount");
-  const modalBandEstimate = document.getElementById("modalBandEstimate");
-  const modalFeedback = document.getElementById("modalFeedback");
-  const modalCloseBtn = document.getElementById("modalCloseBtn");
-  const modalReviewBtn = document.getElementById("modalReviewBtn");
+    // Question Workspace
+    questionPillsContainer: document.getElementById("questionPillsContainer"),
+    activeQuestionCard: document.getElementById("activeQuestionCard"),
+    quizPrevBtn: document.getElementById("quizPrevBtn"),
+    quizNextBtn: document.getElementById("quizNextBtn"),
+    quizFinishBtn: document.getElementById("quizFinishBtn"),
 
-  // History Modal
-  const historyBtn = document.getElementById("historyBtn");
-  const historyModal = document.getElementById("historyModal");
-  const historyList = document.getElementById("historyList");
-  const closeHistoryBtn = document.getElementById("closeHistoryBtn");
-  const clearHistoryBtn = document.getElementById("clearHistoryBtn");
+    // Results UI
+    resultsScoreBig: document.getElementById("resultsScoreBig"),
+    resultsPercentKicker: document.getElementById("resultsPercentKicker"),
+    resultsAssessmentBadge: document.getElementById("resultsAssessmentBadge"),
+    resultsFeedbackText: document.getElementById("resultsFeedbackText"),
+    resStatCorrect: document.getElementById("resStatCorrect"),
+    resStatIncorrect: document.getElementById("resStatIncorrect"),
+    resStatUnanswered: document.getElementById("resStatUnanswered"),
+    toggleTranscriptBtn: document.getElementById("toggleTranscriptBtn"),
+    transcriptPanel: document.getElementById("transcriptPanel"),
+    transcriptTextContent: document.getElementById("transcriptTextContent"),
+    reviewQuestionsContainer: document.getElementById("reviewQuestionsContainer"),
+    resTryAgainBtn: document.getElementById("resTryAgainBtn"),
+    resNextExBtn: document.getElementById("resNextExBtn"),
+    resCatalogBtn: document.getElementById("resCatalogBtn"),
+
+    // Modals
+    unansweredModal: document.getElementById("unansweredModal"),
+    unansweredCountSpan: document.getElementById("unansweredCountSpan"),
+    modalReviewQuestionsBtn: document.getElementById("modalReviewQuestionsBtn"),
+    modalSubmitAnywayBtn: document.getElementById("modalSubmitAnywayBtn"),
+
+    historyModal: document.getElementById("listeningHistoryModal"),
+    listeningHistoryBtn: document.getElementById("listeningHistoryBtn"),
+    closeHistoryBtn: document.getElementById("closeHistoryBtn"),
+    clearHistoryBtn: document.getElementById("clearHistoryBtn"),
+    historyItemsList: document.getElementById("historyItemsList"),
+    listeningCompletedCount: document.getElementById("listeningCompletedCount")
+  };
 
   // Expose to window for cross-module coordination
   window.listeningPlayer = player;
   window.listeningQuiz = quiz;
 
-  // Enforce consistent light minimalist theme
-  document.documentElement.setAttribute("data-theme", "light");
+  /* ==========================================================================
+     1. INITIALIZATION & ROUTING
+     ========================================================================== */
+  function init() {
+    setupPlayerEventListeners();
+    setupCatalogEventListeners();
+    setupQuestionNavigationListeners();
+    setupResultsEventListeners();
+    setupModalEventListeners();
+
+    renderCatalog();
+    showView("catalog");
+  }
+
+  function showView(viewName) {
+    state.activeView = viewName;
+    if (elements.catalogView) elements.catalogView.classList.toggle("hidden", viewName !== "catalog");
+    if (elements.exerciseView) elements.exerciseView.classList.toggle("hidden", viewName !== "exercise");
+    if (elements.resultsView) elements.resultsView.classList.toggle("hidden", viewName !== "results");
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
 
   /* ==========================================================================
-     2. Darajalar va Darslarni render qilish
+     2. CATALOG RENDERING & FILTERING
      ========================================================================== */
-  function renderLevelTabs() {
-    levelTabs.innerHTML = "";
-    LISTENING_DATA.levels.forEach(lvl => {
+  function renderCatalog() {
+    renderStatsBanner();
+    renderPartFilters();
+    renderLevelFilters();
+    renderExerciseCards();
+  }
+
+  function renderStatsBanner() {
+    const metrics = quiz.getGlobalMetrics(exercises.length);
+    if (elements.statsTotalAvailable) elements.statsTotalAvailable.textContent = metrics.totalAvailable;
+    if (elements.statsCompletedCount) elements.statsCompletedCount.textContent = metrics.completedCount;
+    if (elements.statsAvgScore) elements.statsAvgScore.textContent = metrics.completedCount > 0 ? `${metrics.averagePercentage}%` : "—";
+    if (elements.listeningCompletedCount) elements.listeningCompletedCount.textContent = metrics.completedCount;
+  }
+
+  function renderPartFilters() {
+    if (!elements.partFiltersContainer) return;
+    elements.partFiltersContainer.innerHTML = "";
+
+    parts.forEach(part => {
       const btn = document.createElement("button");
-      btn.className = `level-tab-btn ${lvl.id === activeLevelId ? 'active' : ''}`;
-      btn.innerHTML = `<span>${lvl.name}</span>`;
+      btn.type = "button";
+      btn.className = `filter-pill ${state.selectedPart === part.id ? "active" : ""}`;
+      btn.textContent = part.name;
       btn.addEventListener("click", () => {
-        if (activeLevelId !== lvl.id) {
-          activeLevelId = lvl.id;
-          renderLevelTabs();
-          renderLessons();
-        }
+        state.selectedPart = part.id;
+        renderPartFilters();
+        renderExerciseCards();
       });
-      levelTabs.appendChild(btn);
+      elements.partFiltersContainer.appendChild(btn);
     });
   }
 
-  function renderLessons() {
-    lessonsGrid.innerHTML = "";
-    const filteredLessons = LISTENING_DATA.lessons.filter(l => l.level === activeLevelId);
+  function renderLevelFilters() {
+    if (!elements.levelFiltersContainer) return;
+    elements.levelFiltersContainer.innerHTML = "";
 
-    filteredLessons.forEach((lesson, index) => {
+    levels.forEach(lvl => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = `filter-pill ${state.selectedLevel === lvl.id ? "active" : ""}`;
+      btn.textContent = lvl.name;
+      btn.addEventListener("click", () => {
+        state.selectedLevel = lvl.id;
+        renderLevelFilters();
+        renderExerciseCards();
+      });
+      elements.levelFiltersContainer.appendChild(btn);
+    });
+  }
+
+  function renderExerciseCards() {
+    if (!elements.exercisesGrid) return;
+    elements.exercisesGrid.innerHTML = "";
+
+    const progress = quiz.getProgress();
+
+    const filtered = exercises.filter(ex => {
+      const matchesPart = state.selectedPart === "all" || String(ex.partNumber) === state.selectedPart;
+      const matchesLevel = state.selectedLevel === "all" || ex.cefr.toUpperCase().includes(state.selectedLevel.toUpperCase());
+      return matchesPart && matchesLevel;
+    });
+
+    if (filtered.length === 0) {
+      elements.exercisesGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 48px 16px; color: #737373;">
+          <p style="font-size: 15px;">No exercises match the selected filters.</p>
+        </div>
+      `;
+      return;
+    }
+
+    filtered.forEach(ex => {
       const card = document.createElement("div");
-      const isSelected = activeLesson && activeLesson.id === lesson.id;
-      card.className = `lesson-card ${isSelected ? 'active' : ''}`;
+      card.className = "exercise-card";
+
+      const exProgress = progress.exercises[ex.id];
+      let statusHtml = `<span class="exercise-action-link">Start Exercise &rarr;</span>`;
+      if (exProgress) {
+        statusHtml = `<span class="exercise-card-status">Score: ${exProgress.lastScore}/${exProgress.totalQuestions} (${exProgress.lastPercentage}%)</span>`;
+      }
+
+      const cefrClass = (ex.cefr || "b1").toLowerCase().split("/")[0];
+
       card.innerHTML = `
         <div>
-          <div class="lesson-card-header">
-            <span class="badge ${getBadgeClass(lesson.level)}">${lesson.topic}</span>
-            <span class="lesson-card-duration">${lesson.duration}</span>
+          <div class="exercise-card-meta">
+            <span class="cefr-badge ${cefrClass}">${ex.cefr}</span>
+            <span class="part-tag">${ex.part.split("—")[0].trim()}</span>
           </div>
-          <h3 class="lesson-title">${lesson.title}</h3>
-          <p class="lesson-desc">${lesson.description}</p>
+          <h3 class="exercise-card-title">${escapeHtml(ex.title)}</h3>
+          <p class="exercise-card-desc">${escapeHtml(ex.description)}</p>
         </div>
-        <div class="lesson-meta">
-          <span>${lesson.accent}</span>
-          <span>&middot;</span>
-          <span>${lesson.questions.length} questions</span>
+        <div class="exercise-card-footer">
+          <span class="exercise-duration">⏱ ${ex.duration} &middot; 8 Questions</span>
+          ${statusHtml}
         </div>
       `;
 
       card.addEventListener("click", () => {
-        selectLesson(lesson);
+        startExercise(ex);
       });
 
-      lessonsGrid.appendChild(card);
+      elements.exercisesGrid.appendChild(card);
+    });
+  }
+
+  /* ==========================================================================
+     3. EXERCISE SESSION LIFECYCLE
+     ========================================================================== */
+  function startExercise(exercise) {
+    state.activeExercise = exercise;
+    state.currentQuestionIndex = 0;
+    state.userAnswers = {};
+    state.orderingBuffers = {};
+    state.isTranscriptVisible = false;
+
+    // Load into audio engine
+    player.loadExercise(exercise);
+
+    // Update Player UI
+    if (elements.playerTitle) elements.playerTitle.textContent = exercise.title;
+    if (elements.playerMeta) elements.playerMeta.textContent = `${exercise.cefr} · ${exercise.part} · ${exercise.accent}`;
+    if (elements.exerciseMetaTitle) elements.exerciseMetaTitle.textContent = exercise.title;
+    if (elements.exerciseMetaCefr) {
+      elements.exerciseMetaCefr.textContent = exercise.cefr;
+      elements.exerciseMetaCefr.className = `cefr-badge ${exercise.cefr.toLowerCase().split("/")[0]}`;
+    }
+    if (elements.exerciseMetaPart) elements.exerciseMetaPart.textContent = exercise.part;
+
+    // Initialize ordering question buffer if any
+    exercise.questions.forEach(q => {
+      if (q.type === "ordering" && q.items) {
+        state.orderingBuffers[q.id] = q.items.map(it => it.id);
+        state.userAnswers[q.id] = [...state.orderingBuffers[q.id]];
+      }
     });
 
-    // Agar hech qaysi dars tanlanmagan bo'lsa, birinchisini tanlash
-    if (!activeLesson || activeLesson.level !== activeLevelId) {
-      if (filteredLessons.length > 0) {
-        selectLesson(filteredLessons[0]);
+    renderQuestionPills();
+    renderActiveQuestion();
+    showView("exercise");
+  }
+
+  /* ==========================================================================
+     4. AUDIO PLAYER EVENT LISTENERS
+     ========================================================================== */
+  function setupPlayerEventListeners() {
+    // Play/Pause
+    if (elements.playBtn) {
+      elements.playBtn.addEventListener("click", () => {
+        player.togglePlay();
+      });
+    }
+
+    // Replay
+    if (elements.replayBtn) {
+      elements.replayBtn.addEventListener("click", () => {
+        player.replay();
+      });
+    }
+
+    // State changes
+    player.onStateChange = (pState) => {
+      if (!elements.playerCard) return;
+      elements.playerCard.classList.toggle("is-playing", pState === "playing");
+      if (elements.playBtn) {
+        elements.playBtn.textContent = pState === "playing" ? "Pause" : "Play";
       }
+    };
+
+    // Timeline updates
+    player.onTimeUpdate = (current, total, percent) => {
+      if (elements.currentTimeLabel) elements.currentTimeLabel.textContent = formatTime(current);
+      if (elements.totalTimeLabel) elements.totalTimeLabel.textContent = formatTime(total);
+      if (elements.progressFill) elements.progressFill.style.width = `${percent}%`;
+    };
+
+    // Seeking on progress track
+    if (elements.progressTrack) {
+      const handleSeek = (e) => {
+        const rect = elements.progressTrack.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const percent = Math.max(0, Math.min(1, clickX / rect.width));
+        player.seekToPercent(percent);
+      };
+
+      elements.progressTrack.addEventListener("click", handleSeek);
+    }
+
+    // Speed buttons
+    if (elements.speedBtns) {
+      elements.speedBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+          elements.speedBtns.forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          const sp = parseFloat(btn.dataset.speed) || 1.0;
+          player.setRate(sp);
+        });
+      });
+    }
+
+    // Volume Slider
+    if (elements.volumeSlider) {
+      elements.volumeSlider.addEventListener("input", (e) => {
+        player.setVolume(e.target.value);
+      });
     }
   }
 
-  function getBadgeClass(level) {
-    if (level === "beginner") return "badge-beginner";
-    if (level === "intermediate") return "badge-intermediate";
-    return "badge-advanced";
-  }
-
   /* ==========================================================================
-     3. Darsni faollashtirish (Select Lesson)
+     5. 8-QUESTION WORKSPACE & STEP NAVIGATION
      ========================================================================== */
-  function selectLesson(lesson) {
-    activeLesson = lesson;
-    userAnswers = {};
-    isEvaluated = false;
+  function renderQuestionPills() {
+    if (!elements.questionPillsContainer || !state.activeExercise) return;
+    elements.questionPillsContainer.innerHTML = "";
 
-    // Kartochkalardagi faollik klassini yangilash
-    document.querySelectorAll(".lesson-card").forEach(c => c.classList.remove("active"));
-    const cards = Array.from(document.querySelectorAll(".lesson-card"));
-    const matchingCard = cards.find(c => c.querySelector(".lesson-title").textContent === lesson.title);
-    if (matchingCard) matchingCard.classList.add("active");
+    const questions = state.activeExercise.questions || [];
 
-    // Player ma'lumotlarini yangilash
-    playerTitle.textContent = lesson.title;
-    playerMeta.textContent = `${lesson.topic} • Aksent: ${lesson.accent} • Savollar: ${lesson.questions.length} ta`;
+    questions.forEach((q, idx) => {
+      const pill = document.createElement("button");
+      pill.type = "button";
+      const isAnswered = isQuestionAnswered(q);
+      const isActive = idx === state.currentQuestionIndex;
 
-    // Speed tugmalarini qayta sozlash
-    speedBtns.forEach(b => {
-      const sp = parseFloat(b.getAttribute("data-speed"));
-      b.classList.toggle("active", sp === lesson.audioSpeedDefault);
+      pill.className = `q-step-pill ${isActive ? "active" : ""} ${isAnswered ? "answered" : ""}`;
+      pill.textContent = idx + 1;
+      pill.title = `Question ${idx + 1}`;
+
+      pill.addEventListener("click", () => {
+        state.currentQuestionIndex = idx;
+        renderQuestionPills();
+        renderActiveQuestion();
+      });
+
+      elements.questionPillsContainer.appendChild(pill);
     });
-
-    // Pleyerga yuklash
-    player.loadLesson(lesson);
-
-    // Savollarni, skriptni va lug'atni render qilish
-    renderQuestions(lesson);
-    renderTranscript(lesson);
-    renderVocabulary(lesson);
-
-    // Savollar statusi
-    quizScoreBadge.style.display = "none";
   }
 
-  /* ==========================================================================
-     4. Savollarni render qilish
-     ========================================================================== */
-  function renderQuestions(lesson) {
-    questionsContainer.innerHTML = "";
+  function isQuestionAnswered(q) {
+    const val = state.userAnswers[q.id];
+    if (val === undefined || val === null || val === "") return false;
+    if (q.type === "matching") {
+      if (typeof val !== "object") return false;
+      return Object.keys(val).length > 0 && Object.values(val).some(v => v !== "");
+    }
+    return true;
+  }
 
-    lesson.questions.forEach((q, idx) => {
-      const qCard = document.createElement("div");
-      qCard.className = "question-card";
-      qCard.id = `qcard-${q.id}`;
+  function renderActiveQuestion() {
+    if (!elements.activeQuestionCard || !state.activeExercise) return;
+    const questions = state.activeExercise.questions;
+    const q = questions[state.currentQuestionIndex];
+    if (!q) return;
 
-      let inputHtml = "";
+    // Update bottom nav buttons
+    if (elements.quizPrevBtn) {
+      elements.quizPrevBtn.disabled = state.currentQuestionIndex === 0;
+    }
+    if (elements.quizNextBtn) {
+      elements.quizNextBtn.textContent = state.currentQuestionIndex === questions.length - 1 ? "Finish Test" : "Next →";
+    }
 
-      if (q.type === "blank") {
+    const typeLabels = {
+      multiple_choice: "Multiple Choice",
+      true_false: "True / False",
+      fill_blank: "Fill in the Blank",
+      short_answer: "Short Answer",
+      matching: "Matching",
+      ordering: "Chronological Ordering"
+    };
+
+    let inputHtml = "";
+
+    switch (q.type) {
+      case "multiple_choice": {
+        const currentAns = state.userAnswers[q.id];
         inputHtml = `
-          <input 
-            type="text" 
-            class="blank-input" 
-            placeholder="Javobingizni yozing..." 
-            data-qid="${q.id}"
-            autocomplete="off"
-          />
-        `;
-      } else if (q.type === "multiple_choice" || q.type === "true_false_ng") {
-        const options = q.options || [];
-        inputHtml = `
-          <div class="options-list">
-            ${options.map(opt => `
-              <label class="option-item">
-                <input type="radio" name="radio-${q.id}" value="${opt.key}" data-qid="${q.id}">
-                <span class="option-text"><strong>${opt.key})</strong> ${opt.text}</span>
-              </label>
+          <div class="mc-options-list">
+            ${q.options.map(opt => `
+              <div class="mc-option-label ${currentAns === opt.key ? "selected" : ""}" data-key="${opt.key}">
+                <span class="mc-option-key">${opt.key}</span>
+                <span class="mc-option-text">${escapeHtml(opt.text)}</span>
+              </div>
             `).join("")}
           </div>
         `;
+        break;
       }
 
-      qCard.innerHTML = `
-        <div class="question-number-badge">Savol ${idx + 1}</div>
-        <div class="question-prompt">${q.prompt}</div>
-        ${q.instruction ? `<div class="question-instruction">${q.instruction}</div>` : ""}
-        ${inputHtml}
-        <div class="feedback-placeholder" id="feedback-${q.id}"></div>
-      `;
-
-      questionsContainer.appendChild(qCard);
-    });
-
-    // Listenerlarni ulash
-    questionsContainer.querySelectorAll("input.blank-input").forEach(inp => {
-      inp.addEventListener("input", (e) => {
-        const qid = e.target.getAttribute("data-qid");
-        userAnswers[qid] = e.target.value;
-      });
-    });
-
-    questionsContainer.querySelectorAll('input[type="radio"]').forEach(rad => {
-      rad.addEventListener("change", (e) => {
-        const qid = e.target.getAttribute("data-qid");
-        userAnswers[qid] = e.target.value;
-      });
-    });
-  }
-
-  /* ==========================================================================
-     5. Skript va Lug'atni render qilish
-     ========================================================================== */
-  function renderTranscript(lesson) {
-    transcriptList.innerHTML = "";
-    lesson.sentences.forEach((s, idx) => {
-      const item = document.createElement("div");
-      item.className = "transcript-sentence";
-      item.id = `sentence-item-${idx}`;
-      item.innerHTML = `
-        <span class="transcript-speaker">${s.speaker}:</span>
-        <span>${s.text}</span>
-      `;
-      item.addEventListener("click", () => {
-        player.playSentence(idx);
-        player.isPlaying = true;
-        player.isPaused = false;
-        player.notifyState();
-      });
-      transcriptList.appendChild(item);
-    });
-  }
-
-  function renderVocabulary(lesson) {
-    vocabList.innerHTML = "";
-    lesson.vocabulary.forEach(v => {
-      const item = document.createElement("div");
-      item.className = "vocab-item";
-      item.innerHTML = `
-        <div class="vocab-word-header">
-          <div>
-            <span class="vocab-word">${v.word}</span>
-            <span class="vocab-phonetic">${v.phonetic} &middot; <em>${v.pos}</em></span>
-          </div>
-          <button type="button" class="vocab-speak-btn" title="Pronounce word">Listen</button>
-        </div>
-        <div class="vocab-uzbek">${v.uzbek}</div>
-        <div class="vocab-def">${v.definition}</div>
-        <div class="vocab-example">"${v.example}"</div>
-      `;
-
-      // Ovoz chiqarish tugmasi
-      const speakBtn = item.querySelector("button");
-      speakBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        if ('speechSynthesis' in window) {
-          const utt = new SpeechSynthesisUtterance(v.word);
-          utt.lang = lesson.accent.includes("US") ? "en-US" : "en-GB";
-          window.speechSynthesis.speak(utt);
-        }
-      });
-
-      vocabList.appendChild(item);
-    });
-  }
-
-  /* ==========================================================================
-     6. Audio Player hodisalari (Events & Callbacks)
-     ========================================================================== */
-  playBtn.addEventListener("click", () => {
-    player.togglePlay();
-  });
-
-  prevBtn.addEventListener("click", () => {
-    player.prevSentence();
-  });
-
-  nextBtn.addEventListener("click", () => {
-    player.nextSentence();
-  });
-
-  restartBtn.addEventListener("click", () => {
-    player.restart();
-  });
-
-  speedBtns.forEach(btn => {
-    btn.addEventListener("click", () => {
-      speedBtns.forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      const speed = parseFloat(btn.getAttribute("data-speed"));
-      player.setRate(speed);
-    });
-  });
-
-  shadowingCheckbox.addEventListener("change", (e) => {
-    player.shadowingMode = e.target.checked;
-  });
-
-  progressTrack.addEventListener("click", (e) => {
-    const rect = progressTrack.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const width = rect.width;
-    const percent = (clickX / width) * 100;
-    player.seekPercent(percent);
-  });
-
-  // Player holat o'zgarishi
-  player.onStateChange = (state) => {
-    if (state.isPlaying && !state.isPaused) {
-      playBtn.textContent = "Pause";
-      playBtn.title = "Pause audio";
-      waveVisualizer.classList.add("playing");
-    } else {
-      playBtn.textContent = "Play";
-      playBtn.title = "Play audio";
-      waveVisualizer.classList.remove("playing");
-    }
-  };
-
-  // Jumla o'zgarishi (Sinxron ko'rsatish)
-  player.onSentenceChange = (sentenceIdx, sentenceObj) => {
-    document.querySelectorAll(".transcript-sentence").forEach(el => el.classList.remove("active-sentence"));
-    if (sentenceIdx >= 0) {
-      const activeEl = document.getElementById(`sentence-item-${sentenceIdx}`);
-      if (activeEl) {
-        activeEl.classList.add("active-sentence");
-        activeEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }
-    }
-  };
-
-  // Vaqt va Progress yangilanishi
-  player.onProgressUpdate = (progress) => {
-    currentTimeLabel.textContent = progress.currentTimeStr;
-    totalTimeLabel.textContent = progress.totalTimeStr;
-    progressFill.style.width = `${progress.percent}%`;
-  };
-
-  /* ==========================================================================
-     7. Quiz baholash va tekshirish
-     ========================================================================== */
-  checkAnswersBtn.addEventListener("click", () => {
-    if (!activeLesson) return;
-
-    isEvaluated = true;
-    const summary = quiz.evaluateLesson(activeLesson, userAnswers);
-
-    // Savol kartochkalariga xatolarni belgilash
-    summary.details.forEach(item => {
-      const qCard = document.getElementById(`qcard-${item.questionId}`);
-      const feedbackEl = document.getElementById(`feedback-${item.questionId}`);
-
-      if (qCard && feedbackEl) {
-        qCard.classList.remove("correct", "incorrect");
-        qCard.classList.add(item.isCorrect ? "correct" : "incorrect");
-
-        const statusLabel = item.isCorrect ? "Correct" : "Incorrect";
-        const answerInfo = item.isCorrect 
-          ? `<strong>Your answer:</strong> ${item.userAnswer}`
-          : `<strong>Your answer:</strong> ${item.userAnswer || "<em>(No answer)</em>"} &middot; <strong>Correct:</strong> <span class="feedback-correct-val">${item.correctAnswer}</span>`;
-
-        feedbackEl.innerHTML = `
-          <div class="question-feedback ${item.isCorrect ? 'feedback-correct' : 'feedback-incorrect'}">
-            <div class="feedback-header"><span class="feedback-status-pill ${item.isCorrect ? 'correct' : 'incorrect'}">${statusLabel}</span> ${answerInfo}</div>
-            <div class="feedback-explanation"><strong>Explanation:</strong> ${item.explanation}</div>
-            <div class="feedback-evidence"><strong>Proof from script:</strong> "${item.scriptEvidence}"</div>
+      case "true_false": {
+        const currentAns = state.userAnswers[q.id];
+        inputHtml = `
+          <div class="tf-options-group">
+            <button type="button" class="tf-btn ${currentAns === "True" ? "selected" : ""}" data-val="True">True</button>
+            <button type="button" class="tf-btn ${currentAns === "False" ? "selected" : ""}" data-val="False">False</button>
           </div>
         `;
+        break;
+      }
+
+      case "fill_blank":
+      case "short_answer": {
+        const currentAns = state.userAnswers[q.id] || "";
+        inputHtml = `
+          <div style="margin-top: 8px;">
+            <input type="text" class="text-answer-input" id="qTextInput"
+              placeholder="${q.type === 'fill_blank' ? 'Type the missing word(s)...' : 'Type your concise answer...'}"
+              value="${escapeHtml(currentAns)}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+          </div>
+        `;
+        break;
+      }
+
+      case "matching": {
+        const currentMatches = state.userAnswers[q.id] || {};
+        inputHtml = `
+          <div class="matching-items-list">
+            ${q.items.map(item => `
+              <div class="matching-row">
+                <span class="matching-item-label">${escapeHtml(item.label)}</span>
+                <select class="matching-select" data-item-id="${item.id}">
+                  <option value="">Select match...</option>
+                  ${q.options.map(opt => `
+                    <option value="${escapeHtml(opt)}" ${currentMatches[item.id] === opt ? "selected" : ""}>
+                      ${escapeHtml(opt)}
+                    </option>
+                  `).join("")}
+                </select>
+              </div>
+            `).join("")}
+          </div>
+        `;
+        break;
+      }
+
+      case "ordering": {
+        const currentOrder = state.orderingBuffers[q.id] || q.items.map(i => i.id);
+        const itemMap = {};
+        q.items.forEach(i => itemMap[i.id] = i.text);
+
+        inputHtml = `
+          <div class="ordering-items-list">
+            ${currentOrder.map((itemId, idx) => `
+              <div class="ordering-row">
+                <span class="ordering-order-num">${idx + 1}.</span>
+                <span class="ordering-text">${escapeHtml(itemMap[itemId] || itemId)}</span>
+                <div class="ordering-buttons">
+                  <button type="button" class="order-btn" data-action="up" data-idx="${idx}" ${idx === 0 ? "disabled" : ""}>▲</button>
+                  <button type="button" class="order-btn" data-action="down" data-idx="${idx}" ${idx === currentOrder.length - 1 ? "disabled" : ""}>▼</button>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        `;
+        break;
+      }
+    }
+
+    elements.activeQuestionCard.innerHTML = `
+      <div class="question-kicker">Question ${state.currentQuestionIndex + 1} of 8 &middot; ${typeLabels[q.type] || "Question"}</div>
+      <h3 class="question-prompt">${escapeHtml(q.prompt)}</h3>
+      <p class="question-instruction">${escapeHtml(q.instruction || "")}</p>
+      <div id="questionInputArea">${inputHtml}</div>
+    `;
+
+    // Attach dynamic input listeners
+    attachQuestionInputListeners(q);
+  }
+
+  function attachQuestionInputListeners(q) {
+    // Multiple Choice
+    if (q.type === "multiple_choice") {
+      const labels = elements.activeQuestionCard.querySelectorAll(".mc-option-label");
+      labels.forEach(lbl => {
+        lbl.addEventListener("click", () => {
+          labels.forEach(l => l.classList.remove("selected"));
+          lbl.classList.add("selected");
+          state.userAnswers[q.id] = lbl.dataset.key;
+          renderQuestionPills();
+        });
+      });
+    }
+
+    // True/False
+    if (q.type === "true_false") {
+      const btns = elements.activeQuestionCard.querySelectorAll(".tf-btn");
+      btns.forEach(btn => {
+        btn.addEventListener("click", () => {
+          btns.forEach(b => b.classList.remove("selected"));
+          btn.classList.add("selected");
+          state.userAnswers[q.id] = btn.dataset.val;
+          renderQuestionPills();
+        });
+      });
+    }
+
+    // Text inputs (Fill blank & Short answer)
+    if (q.type === "fill_blank" || q.type === "short_answer") {
+      const input = document.getElementById("qTextInput");
+      if (input) {
+        input.addEventListener("input", (e) => {
+          state.userAnswers[q.id] = e.target.value;
+          renderQuestionPills();
+        });
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            handleNextClick();
+          }
+        });
+      }
+    }
+
+    // Matching selects
+    if (q.type === "matching") {
+      const selects = elements.activeQuestionCard.querySelectorAll(".matching-select");
+      selects.forEach(sel => {
+        sel.addEventListener("change", () => {
+          if (!state.userAnswers[q.id]) state.userAnswers[q.id] = {};
+          state.userAnswers[q.id][sel.dataset.itemId] = sel.value;
+          renderQuestionPills();
+        });
+      });
+    }
+
+    // Ordering buttons
+    if (q.type === "ordering") {
+      const orderBtns = elements.activeQuestionCard.querySelectorAll(".order-btn");
+      orderBtns.forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const action = btn.dataset.action;
+          const idx = parseInt(btn.dataset.idx, 10);
+          const order = state.orderingBuffers[q.id];
+
+          if (action === "up" && idx > 0) {
+            const temp = order[idx - 1];
+            order[idx - 1] = order[idx];
+            order[idx] = temp;
+          } else if (action === "down" && idx < order.length - 1) {
+            const temp = order[idx + 1];
+            order[idx + 1] = order[idx];
+            order[idx] = temp;
+          }
+
+          state.userAnswers[q.id] = [...order];
+          renderActiveQuestion();
+          renderQuestionPills();
+        });
+      });
+    }
+  }
+
+  function handleNextClick() {
+    const total = state.activeExercise.questions.length;
+    if (state.currentQuestionIndex < total - 1) {
+      state.currentQuestionIndex++;
+      renderQuestionPills();
+      renderActiveQuestion();
+    } else {
+      handleFinishAttempt();
+    }
+  }
+
+  function setupQuestionNavigationListeners() {
+    if (elements.quizPrevBtn) {
+      elements.quizPrevBtn.addEventListener("click", () => {
+        if (state.currentQuestionIndex > 0) {
+          state.currentQuestionIndex--;
+          renderQuestionPills();
+          renderActiveQuestion();
+        }
+      });
+    }
+
+    if (elements.quizNextBtn) {
+      elements.quizNextBtn.addEventListener("click", () => {
+        handleNextClick();
+      });
+    }
+
+    if (elements.quizFinishBtn) {
+      elements.quizFinishBtn.addEventListener("click", () => {
+        handleFinishAttempt();
+      });
+    }
+
+    if (elements.exerciseBackBtn) {
+      elements.exerciseBackBtn.addEventListener("click", () => {
+        player.stop();
+        renderCatalog();
+        showView("catalog");
+      });
+    }
+  }
+
+  /* ==========================================================================
+     6. UNANSWERED WARNING & TEST SUBMISSION
+     ========================================================================== */
+  function handleFinishAttempt() {
+    if (!state.activeExercise) return;
+    const questions = state.activeExercise.questions;
+
+    let unansweredCount = 0;
+    let firstUnansweredIdx = -1;
+
+    questions.forEach((q, idx) => {
+      if (!isQuestionAnswered(q)) {
+        unansweredCount++;
+        if (firstUnansweredIdx === -1) firstUnansweredIdx = idx;
       }
     });
 
-    // Score badge
-    quizScoreBadge.style.display = "inline-flex";
-    quizScoreBadge.textContent = `${summary.correctCount} / ${summary.totalQuestions} Correct (${summary.percentage}%)`;
-    quizScoreBadge.className = `badge ${summary.percentage >= 70 ? 'badge-beginner' : 'badge-advanced'}`;
+    if (unansweredCount > 0) {
+      // Show confirmation modal
+      if (elements.unansweredCountSpan) {
+        elements.unansweredCountSpan.textContent = unansweredCount;
+      }
+      if (elements.unansweredModal) {
+        elements.unansweredModal.classList.remove("hidden");
+      }
+    } else {
+      executeSubmission();
+    }
+  }
 
-    // Natijalar modalini ochish
-    modalScorePercent.textContent = `${summary.percentage}%`;
-    modalCorrectCount.textContent = `${summary.correctCount} / ${summary.totalQuestions}`;
-    modalBandEstimate.textContent = `${summary.cefrLevel} (IELTS ~${summary.bandScore})`;
-    modalFeedback.textContent = summary.feedbackMessage;
-    resultsModal.classList.add("show");
-  });
+  function executeSubmission() {
+    player.stop();
+    const summary = quiz.evaluateExercise(state.activeExercise, state.userAnswers);
+    state.currentTestSummary = summary;
+    renderResults(summary);
+    showView("results");
+  }
 
-  resetQuizBtn.addEventListener("click", () => {
-    if (!activeLesson) return;
-    userAnswers = {};
-    isEvaluated = false;
-    renderQuestions(activeLesson);
-    quizScoreBadge.style.display = "none";
-  });
+  function setupModalEventListeners() {
+    if (elements.modalReviewQuestionsBtn) {
+      elements.modalReviewQuestionsBtn.addEventListener("click", () => {
+        if (elements.unansweredModal) elements.unansweredModal.classList.add("hidden");
+        // Focus on first unanswered question
+        const questions = state.activeExercise.questions;
+        const firstUnanswered = questions.findIndex(q => !isQuestionAnswered(q));
+        if (firstUnanswered !== -1) {
+          state.currentQuestionIndex = firstUnanswered;
+          renderQuestionPills();
+          renderActiveQuestion();
+        }
+      });
+    }
 
-  toggleExtraBtn.addEventListener("click", () => {
-    const isHidden = extraSection.style.display === "none";
-    extraSection.style.display = isHidden ? "grid" : "none";
-    toggleExtraBtn.querySelector("span").textContent = isHidden ? "Hide Script & Vocabulary" : "Script & Vocabulary";
-  });
+    if (elements.modalSubmitAnywayBtn) {
+      elements.modalSubmitAnywayBtn.addEventListener("click", () => {
+        if (elements.unansweredModal) elements.unansweredModal.classList.add("hidden");
+        executeSubmission();
+      });
+    }
 
-  modalCloseBtn.addEventListener("click", () => {
-    resultsModal.classList.remove("show");
-  });
+    // History Modal
+    if (elements.listeningHistoryBtn) {
+      elements.listeningHistoryBtn.addEventListener("click", () => {
+        renderHistoryModal();
+        if (elements.historyModal) elements.historyModal.classList.remove("hidden");
+      });
+    }
 
-  modalReviewBtn.addEventListener("click", () => {
-    resultsModal.classList.remove("show");
-    // Skript va lug'atni avtomatik ochish
-    extraSection.style.display = "grid";
-    toggleExtraBtn.querySelector("span").textContent = "Hide Script & Vocabulary";
-    questionsContainer.scrollIntoView({ behavior: "smooth" });
-  });
+    if (elements.closeHistoryBtn) {
+      elements.closeHistoryBtn.addEventListener("click", () => {
+        if (elements.historyModal) elements.historyModal.classList.add("hidden");
+      });
+    }
+
+    if (elements.clearHistoryBtn) {
+      elements.clearHistoryBtn.addEventListener("click", () => {
+        if (confirm("Clear all listening progress history?")) {
+          quiz.clearHistory();
+          renderHistoryModal();
+          renderCatalog();
+        }
+      });
+    }
+  }
 
   /* ==========================================================================
-     8. Natijalar Tarixi (History)
+     7. RESULTS & REVIEW VIEW
      ========================================================================== */
-  historyBtn.addEventListener("click", () => {
-    renderHistory();
-    historyModal.classList.add("show");
-  });
+  function renderResults(summary) {
+    if (elements.resultsScoreBig) elements.resultsScoreBig.textContent = `${summary.correctCount} / ${summary.totalQuestions}`;
+    if (elements.resultsPercentKicker) elements.resultsPercentKicker.textContent = `${summary.percentage}% Accuracy`;
+    if (elements.resultsAssessmentBadge) elements.resultsAssessmentBadge.textContent = summary.assessment;
+    if (elements.resultsFeedbackText) elements.resultsFeedbackText.textContent = summary.feedback;
 
-  closeHistoryBtn.addEventListener("click", () => {
-    historyModal.classList.remove("show");
-  });
+    if (elements.resStatCorrect) elements.resStatCorrect.textContent = summary.correctCount;
+    if (elements.resStatIncorrect) elements.resStatIncorrect.textContent = summary.incorrectCount;
+    if (elements.resStatUnanswered) elements.resStatUnanswered.textContent = summary.unansweredCount;
 
-  clearHistoryBtn.addEventListener("click", () => {
-    if (confirm("Rostdan ham barcha natijalar tarixini tozalamoqchimisiz?")) {
-      quiz.clearHistory();
-      renderHistory();
+    // Transcript setup (hidden by default)
+    state.isTranscriptVisible = false;
+    if (elements.transcriptPanel) elements.transcriptPanel.classList.add("hidden");
+    if (elements.toggleTranscriptBtn) elements.toggleTranscriptBtn.textContent = "Show Transcript";
+    if (elements.transcriptTextContent && state.activeExercise) {
+      elements.transcriptTextContent.textContent = state.activeExercise.script;
     }
-  });
 
-  function renderHistory() {
-    const history = quiz.getHistory();
-    historyList.innerHTML = "";
+    // Render detailed review cards for all 8 questions
+    renderReviewCards(summary.reviewDetails);
+  }
+
+  function renderReviewCards(details = []) {
+    if (!elements.reviewQuestionsContainer) return;
+    elements.reviewQuestionsContainer.innerHTML = "";
+
+    details.forEach(item => {
+      const card = document.createElement("div");
+      card.className = `review-card ${item.isCorrect ? "correct" : "incorrect"}`;
+
+      card.innerHTML = `
+        <div class="review-card-top">
+          <span style="font-size: 12px; font-weight: 600; color: #737373;">Question ${item.questionNumber}</span>
+          <span class="review-status-tag">${item.isCorrect ? "✓ Correct" : (item.isAnswered ? "✕ Incorrect" : "— Unanswered")}</span>
+        </div>
+        <h4 class="review-prompt">${escapeHtml(item.prompt)}</h4>
+        <div class="review-answers-compare">
+          <div class="user-ans-row">
+            <strong>Your answer:</strong> ${escapeHtml(item.userAnswerDisplay || "None")}
+          </div>
+          ${!item.isCorrect ? `
+            <div class="correct-ans-row">
+              <strong>Correct answer:</strong> ${escapeHtml(item.correctAnswerDisplay)}
+            </div>
+          ` : ""}
+        </div>
+        <p class="review-explanation">${escapeHtml(item.explanation)}</p>
+        ${item.scriptEvidence ? `
+          <div class="review-evidence-box">
+            <span class="review-evidence-lbl">Audio Evidence:</span> "${escapeHtml(item.scriptEvidence)}"
+          </div>
+        ` : ""}
+      `;
+
+      elements.reviewQuestionsContainer.appendChild(card);
+    });
+  }
+
+  function setupResultsEventListeners() {
+    // Toggle Transcript
+    if (elements.toggleTranscriptBtn) {
+      elements.toggleTranscriptBtn.addEventListener("click", () => {
+        state.isTranscriptVisible = !state.isTranscriptVisible;
+        if (elements.transcriptPanel) {
+          elements.transcriptPanel.classList.toggle("hidden", !state.isTranscriptVisible);
+        }
+        elements.toggleTranscriptBtn.textContent = state.isTranscriptVisible ? "Hide Transcript" : "Show Transcript";
+      });
+    }
+
+    // Try Again
+    if (elements.resTryAgainBtn) {
+      elements.resTryAgainBtn.addEventListener("click", () => {
+        if (state.activeExercise) {
+          startExercise(state.activeExercise);
+        }
+      });
+    }
+
+    // Next Exercise
+    if (elements.resNextExBtn) {
+      elements.resNextExBtn.addEventListener("click", () => {
+        if (!state.activeExercise) return;
+        const currentIdx = exercises.findIndex(e => e.id === state.activeExercise.id);
+        const nextIdx = (currentIdx + 1) % exercises.length;
+        startExercise(exercises[nextIdx]);
+      });
+    }
+
+    // Back to Catalog
+    if (elements.resCatalogBtn) {
+      elements.resCatalogBtn.addEventListener("click", () => {
+        renderCatalog();
+        showView("catalog");
+      });
+    }
+  }
+
+  /* ==========================================================================
+     8. HISTORY MODAL RENDERING
+     ========================================================================== */
+  function renderHistoryModal() {
+    if (!elements.historyItemsList) return;
+    const progress = quiz.getProgress();
+    const history = progress.history || [];
 
     if (history.length === 0) {
-      historyList.innerHTML = `<p style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Hozircha hech qanday test topshirilmagan.</p>`;
+      elements.historyItemsList.innerHTML = `
+        <div style="text-align: center; padding: 24px 0; color: #737373; font-size: 13px;">
+          No listening tests completed yet. Complete an exercise to track your progress!
+        </div>
+      `;
       return;
     }
 
-    history.forEach(item => {
-      const date = new Date(item.date).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
-      const row = document.createElement("div");
-      row.className = "history-item-row";
-      row.innerHTML = `
+    elements.historyItemsList.innerHTML = history.map(item => `
+      <div class="history-item-row">
         <div>
-          <div class="history-item-title">${item.lessonTitle}</div>
-          <div class="history-item-meta">${date} &middot; Level: ${item.level.toUpperCase()}</div>
+          <div style="font-weight: 600; color: #0A0A0A;">${escapeHtml(item.title)}</div>
+          <div style="font-size: 11px; color: #737373;">${item.cefr} &middot; ${item.date}</div>
         </div>
-        <div class="history-item-score">
-          <div class="history-item-pct">${item.percentage}%</div>
-          <div class="history-item-sub">${item.correctCount}/${item.totalQuestions} &middot; ${item.cefrLevel}</div>
+        <div style="text-align: right;">
+          <div style="font-weight: 700; color: ${item.percentage >= 75 ? '#16A34A' : '#0B3BFF'};">${item.score}</div>
+          <div style="font-size: 11px; color: #737373;">${item.percentage}%</div>
         </div>
-      `;
-      historyList.appendChild(row);
-    });
+      </div>
+    `).join("");
   }
 
-  // Modallarni tashqarisiga bosganda yopish
-  [resultsModal, historyModal].forEach(modal => {
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) {
-        modal.classList.remove("show");
-      }
-    });
-  });
-
   /* ==========================================================================
-     9. Dastlabki ishga tushirish (Bootstrap)
+     UTILITIES
      ========================================================================== */
-  renderLevelTabs();
-  renderLessons();
-});
+  function formatTime(totalSec) {
+    const s = Math.max(0, Math.floor(totalSec || 0));
+    const mins = Math.floor(s / 60);
+    const secs = s % 60;
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+  }
+
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  // Self-start on DOM ready
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();

@@ -19,8 +19,11 @@
       <div class="site-header-left">
         <a href="#topics" class="site-brand" id="nav-brand">English Mastery</a>
         <div class="module-nav" role="tablist" aria-label="Practice modules">
-          <button type="button" class="module-nav-btn active" id="tab-speaking" role="tab" aria-selected="true" aria-controls="module-speaking">Speaking</button>
+          <button type="button" class="module-nav-btn active" id="tab-speaking" role="tab" aria-selected="true" aria-controls="module-speaking">Shadowing</button>
           <button type="button" class="module-nav-btn" id="tab-listening" role="tab" aria-selected="false" aria-controls="module-listening">Listening</button>
+          <button type="button" class="module-nav-btn disabled" disabled title="Coming soon">Quiz <span class="soon-badge">Soon</span></button>
+          <button type="button" class="module-nav-btn disabled" disabled title="Coming soon">Reading <span class="soon-badge">Soon</span></button>
+          <button type="button" class="module-nav-btn disabled" disabled title="Coming soon">Writing <span class="soon-badge">Soon</span></button>
         </div>
       </div>
       <nav class="site-nav">
@@ -29,8 +32,8 @@
           Saved words (<span id="saved-words-count">0</span>)
         </button>
         <!-- Listening Extra Nav Action -->
-        <button type="button" class="nav-text-btn hidden" id="historyBtn" title="Results history">
-          History
+        <button type="button" class="nav-text-btn hidden" id="listeningHistoryBtn" title="View listening progress & results">
+          Progress (<span id="listeningCompletedCount">0</span>)
         </button>
       </nav>
     </header>
@@ -224,196 +227,257 @@
 
     </div>
 
-    <!-- MODULE 2: LISTENING MASTER -->
+    <!-- MODULE 2: PROFESSIONAL LISTENING PRACTICE -->
     <div id="module-listening" class="app-module hidden" role="tabpanel" aria-labelledby="tab-listening">
       <div class="listening-container">
-        <!-- Section Intro -->
-        <header class="section-intro">
-          <div class="listening-intro-header">
-            <div>
-              <h1 class="screen-title">Listening Practice</h1>
-              <p class="screen-desc">Listen to natural dialogues and lectures, train your ear, and test your comprehension.</p>
-            </div>
-          </div>
-        </header>
 
-        <!-- Daraja tanlash paneli -->
-        <section class="level-tabs-container">
-          <div class="level-tabs" id="levelTabs">
-            <!-- JS orqali dinamik yaratiladi -->
-          </div>
-        </section>
-
-        <!-- Darslar ro'yxati -->
-        <section class="lessons-grid" id="lessonsGrid">
-          <!-- JS orqali dars kartochkalari yuklanadi -->
-        </section>
-
-        <!-- Audio Player Kartochkasi -->
-        <section class="player-card">
-          <div class="player-header">
-            <div>
-              <div class="player-info-title" id="playerTitle">Select a lesson</div>
-              <div class="player-info-sub" id="playerMeta">Accent and topic details</div>
-            </div>
-            <div class="speed-selector">
-              <button class="speed-btn" data-speed="0.75">0.75x</button>
-              <button class="speed-btn" data-speed="0.9">0.9x</button>
-              <button class="speed-btn active" data-speed="1.0">1.0x</button>
-              <button class="speed-btn" data-speed="1.25">1.25x</button>
-            </div>
-          </div>
-
-          <!-- Vizual to'lqin (Waveform) -->
-          <div class="player-waveform-visualizer" id="waveVisualizer">
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-          </div>
-
-          <!-- Vaqt va Progress -->
-          <div class="timeline-container">
-            <span class="time-label" id="currentTimeLabel">0:00</span>
-            <div class="progress-track" id="progressTrack">
-              <div class="progress-fill" id="progressFill"></div>
-            </div>
-            <span class="time-label" id="totalTimeLabel">0:00</span>
-          </div>
-
-          <!-- Pleyer boshqaruv tugmalari -->
-          <div class="player-controls">
-            <div class="main-controls">
-              <button id="prevBtn" class="player-nav-btn" title="Previous sentence">Prev</button>
-              <button id="playBtn" class="play-main-btn" title="Play / Pause">Play</button>
-              <button id="nextBtn" class="player-nav-btn" title="Next sentence">Next</button>
-              <button id="restartBtn" class="player-nav-btn" title="Restart from beginning">Restart</button>
-            </div>
-
-            <!-- Shadowing Rejimi -->
-            <label class="mode-toggle" title="Pause after each sentence for shadowing">
-              <span>Shadowing:</span>
-              <div class="toggle-switch">
-                <input type="checkbox" id="shadowingCheckbox">
-                <span class="slider"></span>
+        <!-- VIEW 1: EXERCISE CATALOG VIEW -->
+        <section id="listeningCatalogView" class="catalog-view">
+          <header class="section-intro">
+            <div class="listening-intro-header">
+              <div>
+                <h1 class="screen-title">Listening Practice</h1>
+                <p class="screen-desc">Improve your English listening skills through realistic audio exercises and comprehension questions.</p>
               </div>
-            </label>
+            </div>
+          </header>
+
+          <!-- Top Stats Banner -->
+          <div class="listening-stats-banner">
+            <div class="stat-box">
+              <span class="stat-box-val" id="statsTotalAvailable">12</span>
+              <span class="stat-box-lbl">Available Exercises</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-box-val">A1–C1</span>
+              <span class="stat-box-lbl">CEFR Levels</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-box-val">30–40s</span>
+              <span class="stat-box-lbl">Audio Length</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-box-val">8</span>
+              <span class="stat-box-lbl">Questions / Ex</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-box-val" id="statsCompletedCount">0</span>
+              <span class="stat-box-lbl">Completed</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-box-val" id="statsAvgScore">—</span>
+              <span class="stat-box-lbl">Average Score</span>
+            </div>
+          </div>
+
+          <!-- Part Filters -->
+          <div class="filter-group">
+            <div class="filter-group-title">Practice Format / Part</div>
+            <div class="filter-pills" id="partFiltersContainer">
+              <!-- Dynamically populated from data.js -->
+            </div>
+          </div>
+
+          <!-- Level Filters -->
+          <div class="filter-group">
+            <div class="filter-group-title">CEFR Level</div>
+            <div class="filter-pills" id="levelFiltersContainer">
+              <!-- Dynamically populated from data.js -->
+            </div>
+          </div>
+
+          <!-- Exercises Grid -->
+          <div class="exercises-grid" id="exercisesGrid">
+            <!-- Dynamically populated exercise cards -->
           </div>
         </section>
 
-        <!-- Savollar va Mashqlar qismi -->
-        <section class="quiz-section">
-          <div class="quiz-header">
-            <div>
-              <h2 class="quiz-title">Questions &amp; Exercises</h2>
-              <p class="lesson-desc" style="margin-bottom: 0;">Listen carefully and complete the blanks or select the correct option.</p>
-            </div>
-            <div id="quizScoreBadge" class="badge badge-beginner" style="display: none;">0/0 Correct</div>
-          </div>
-
-          <div id="questionsContainer">
-            <!-- Savollar dinamik ravishda JS orqali joylanadi -->
-          </div>
-
-          <!-- Harakatlar paneli -->
-          <div class="quiz-actions">
-            <div class="quiz-actions-left">
-              <button id="checkAnswersBtn" class="btn btn-primary">
-                <span>Check answers</span>
-              </button>
-              <button id="resetQuizBtn" class="btn btn-secondary">
-                <span>Try again</span>
-              </button>
-            </div>
-            <button id="toggleExtraBtn" class="btn btn-outline">
-              <span>Script &amp; Vocabulary</span>
+        <!-- VIEW 2: ACTIVE EXERCISE & TEST VIEW -->
+        <section id="listeningExerciseView" class="exercise-view hidden">
+          <!-- Exercise Top Bar -->
+          <div class="exercise-top-bar">
+            <button type="button" class="back-link-btn" id="exerciseBackBtn">
+              &larr; Back to Exercises
             </button>
+            <div class="exercise-title-meta">
+              <span class="cefr-badge" id="exerciseMetaCefr">B1</span>
+              <span class="part-tag" id="exerciseMetaPart">Part 1</span>
+              <span style="font-weight: 600; color: #0A0A0A;" id="exerciseMetaTitle">Exercise Title</span>
+            </div>
+          </div>
+
+          <!-- Professional Audio Player Card -->
+          <div class="player-card" id="listeningPlayerCard">
+            <div class="player-header">
+              <div>
+                <h2 class="player-info-title" id="playerTitle">Exercise Title</h2>
+                <div class="player-info-sub" id="playerMeta">CEFR &middot; Part &middot; Accent</div>
+              </div>
+              <div class="auxiliary-controls">
+                <!-- Speed Selector -->
+                <div class="speed-selector" title="Playback speed">
+                  <button type="button" class="speed-btn" data-speed="0.75">0.75x</button>
+                  <button type="button" class="speed-btn" data-speed="0.9">0.9x</button>
+                  <button type="button" class="speed-btn active" data-speed="1.0">1.0x</button>
+                  <button type="button" class="speed-btn" data-speed="1.25">1.25x</button>
+                </div>
+                <!-- Volume Slider -->
+                <div class="volume-control" title="Volume">
+                  <span style="font-size: 13px; color: #737373;">Vol</span>
+                  <input type="range" class="vol-slider" id="volumeSlider" min="0" max="1" step="0.05" value="1" aria-label="Audio volume">
+                </div>
+              </div>
+            </div>
+
+            <!-- Waveform Visualizer -->
+            <div class="waveform-visualizer" id="waveVisualizer" aria-hidden="true">
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+            </div>
+
+            <!-- Timeline & Seekable Progress Track -->
+            <div class="timeline-container">
+              <span class="time-label" id="currentTimeLabel">0:00</span>
+              <div class="progress-track" id="progressTrack" role="slider" aria-label="Audio timeline scrub" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+                <div class="progress-fill" id="progressFill"></div>
+              </div>
+              <span class="time-label" id="totalTimeLabel">0:35</span>
+            </div>
+
+            <!-- Controls Row -->
+            <div class="player-controls-row">
+              <div class="main-audio-btns">
+                <button type="button" class="play-main-btn" id="playBtn" title="Play or pause audio">Play</button>
+                <button type="button" class="replay-btn" id="replayBtn" title="Restart audio from beginning">Replay</button>
+              </div>
+            </div>
+
+            <!-- Hidden Script Notice Callout -->
+            <div class="hidden-script-notice">
+              <span>Transcript is hidden during test to measure true listening comprehension. You may replay the audio at any time.</span>
+            </div>
+          </div>
+
+          <!-- 8-Question Interactive Workspace -->
+          <div class="quiz-workspace" id="quizWorkspace">
+            <!-- Step Navigation Strip (1 to 8) -->
+            <div class="question-nav-strip">
+              <span class="question-nav-title">Questions (8 Total)</span>
+              <div class="question-pills" id="questionPillsContainer">
+                <!-- 8 pills dynamically generated -->
+              </div>
+            </div>
+
+            <!-- Active Question Component -->
+            <div class="active-question-card" id="activeQuestionCard">
+              <!-- Dynamically populated question card -->
+            </div>
+
+            <!-- Navigation Controls -->
+            <div class="quiz-nav-actions">
+              <button type="button" class="quiz-secondary-btn" id="quizPrevBtn">&larr; Previous</button>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="quiz-primary-btn" id="quizNextBtn">Next &rarr;</button>
+                <button type="button" class="quiz-primary-btn finish-test-btn" id="quizFinishBtn">Finish Test</button>
+              </div>
+            </div>
           </div>
         </section>
 
-        <!-- Qo'shimcha materiallar: Skript va Lug'at -->
-        <section class="extra-section" id="extraSection" style="display: none;">
-          <!-- Audio-skript paneli -->
-          <div class="panel-card">
-            <div class="panel-title">
-              <span>Audio Script</span>
+        <!-- VIEW 3: RESULTS & MISTAKE ANALYSIS VIEW -->
+        <section id="listeningResultsView" class="results-view hidden">
+          <!-- Results Score Banner Card -->
+          <div class="results-banner-card">
+            <div class="results-percent-kicker" id="resultsPercentKicker">88% Accuracy</div>
+            <div class="results-score-big" id="resultsScoreBig">7 / 8</div>
+            <div>
+              <span class="results-assessment-badge" id="resultsAssessmentBadge">Strong Comprehension</span>
             </div>
-            <p class="lesson-desc">Click any sentence to listen from that exact point:</p>
-            <div class="transcript-list" id="transcriptList">
-              <!-- Skript jumlalari -->
+            <p class="results-feedback-text" id="resultsFeedbackText">Great work! You accurately identified primary facts and key supporting details.</p>
+
+            <div class="results-stat-grid">
+              <div class="r-stat-cell">
+                <div class="r-stat-num" id="resStatCorrect" style="color: #16A34A;">7</div>
+                <div class="r-stat-lbl">Correct</div>
+              </div>
+              <div class="r-stat-cell">
+                <div class="r-stat-num" id="resStatIncorrect" style="color: #DC2626;">1</div>
+                <div class="r-stat-lbl">Incorrect</div>
+              </div>
+              <div class="r-stat-cell">
+                <div class="r-stat-num" id="resStatUnanswered" style="color: #737373;">0</div>
+                <div class="r-stat-lbl">Unanswered</div>
+              </div>
             </div>
           </div>
 
-          <!-- Lug'at va iboralar paneli -->
-          <div class="panel-card">
-            <div class="panel-title">
-              <span>Key Vocabulary</span>
+          <!-- Action Bar -->
+          <div class="results-action-bar">
+            <button type="button" class="quiz-secondary-btn" id="resCatalogBtn">&larr; All Exercises</button>
+            <button type="button" class="quiz-secondary-btn" id="resTryAgainBtn">Try Again</button>
+            <button type="button" class="quiz-secondary-btn" id="toggleTranscriptBtn">Show Transcript</button>
+            <button type="button" class="quiz-primary-btn" id="resNextExBtn">Next Exercise &rarr;</button>
+          </div>
+
+          <!-- Audio Transcript Panel (Hidden by default, revealed on button click) -->
+          <div class="transcript-reveal-panel hidden" id="transcriptPanel">
+            <div class="transcript-reveal-header">
+              <h3 style="font-size: 16px; font-weight: 700; color: #0A0A0A;">Full Audio Transcript</h3>
+              <span style="font-size: 12px; color: #737373;">Verified Speech Text</span>
             </div>
-            <p class="lesson-desc">Essential words and Uzbek translations from this audio:</p>
-            <div class="vocab-list" id="vocabList">
-              <!-- So'zlar -->
+            <div class="transcript-text-content" id="transcriptTextContent">
+              <!-- Script text populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Detailed 8-Question Review Cards -->
+          <div class="review-section">
+            <h3 class="review-section-title">Answers &amp; Evidence Breakdown</h3>
+            <div id="reviewQuestionsContainer">
+              <!-- Dynamically populated 8 review cards -->
             </div>
           </div>
         </section>
 
-        <footer class="site-footer">
-          <p>English Mastery &mdash; A unified minimalist platform for speaking fluency and listening comprehension.</p>
-        </footer>
       </div>
     </div>
 
-    <!-- Natijalar modali -->
-    <div class="modal-backdrop" id="resultsModal">
-      <div class="modal-dialog">
-        <div class="modal-header">
-          <div class="modal-score-circle">
-            <span class="modal-score-percent" id="modalScorePercent">0%</span>
-            <span class="modal-score-label">Score</span>
-          </div>
-          <h3 id="modalTitle" class="modal-title">Session Complete</h3>
-          <p id="modalFeedback" class="modal-feedback"></p>
-        </div>
-
-        <div class="score-meta-grid">
-          <div>
-            <div class="meta-item-title">Correct Answers</div>
-            <div class="meta-item-val" id="modalCorrectCount">0 / 0</div>
-          </div>
-          <div>
-            <div class="meta-item-title">Estimated Level</div>
-            <div class="meta-item-val" id="modalBandEstimate">B2</div>
-          </div>
-        </div>
-
-        <p class="modal-hint">
-          Review explanations, distractors, and script proof highlighted for each question.
+    <!-- MODAL: UNANSWERED QUESTIONS CONFIRMATION -->
+    <div class="listening-modal-backdrop hidden" id="unansweredModal" role="dialog" aria-modal="true" aria-labelledby="unansweredModalTitle">
+      <div class="listening-modal-card">
+        <h3 class="modal-title-bold" id="unansweredModalTitle">Unanswered Questions</h3>
+        <p class="modal-desc-text">
+          You have <strong id="unansweredCountSpan">1</strong> unanswered question(s) remaining. Are you sure you want to finish the test now?
         </p>
-
-        <div class="modal-footer">
-          <button id="modalReviewBtn" class="btn btn-primary">Review Answers</button>
-          <button id="modalCloseBtn" class="btn btn-secondary">Close</button>
+        <div class="modal-action-row">
+          <button type="button" class="quiz-secondary-btn" id="modalReviewQuestionsBtn">Review Questions</button>
+          <button type="button" class="quiz-primary-btn finish-test-btn" id="modalSubmitAnywayBtn">Submit Anyway</button>
         </div>
       </div>
     </div>
 
-    <!-- Tarix modali -->
-    <div class="modal-backdrop" id="historyModal">
-      <div class="modal-dialog">
-        <div class="modal-header">
-          <h3 class="modal-title">Past Results History</h3>
+    <!-- MODAL: PAST RESULTS & PROGRESS HISTORY -->
+    <div class="listening-modal-backdrop hidden" id="listeningHistoryModal" role="dialog" aria-modal="true" aria-labelledby="historyModalTitle">
+      <div class="listening-modal-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 class="modal-title-bold" id="historyModalTitle">Listening Progress History</h3>
+          <button type="button" class="back-link-btn" id="closeHistoryBtn">&times; Close</button>
         </div>
-        <div id="historyList" class="history-list-container">
-          <!-- Natijalar ro'yxati -->
+        <div class="history-items-list" id="historyItemsList">
+          <!-- Dynamically populated past tests -->
         </div>
-        <div class="modal-footer">
-          <button id="clearHistoryBtn" class="btn btn-outline btn-danger">Clear History</button>
-          <button id="closeHistoryBtn" class="btn btn-secondary">Close</button>
+        <div class="modal-action-row">
+          <button type="button" class="quiz-secondary-btn" id="clearHistoryBtn" style="color: #DC2626;">Clear History</button>
         </div>
       </div>
     </div>
