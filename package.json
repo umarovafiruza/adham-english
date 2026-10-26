@@ -17,5 +17,8 @@
     "voice-recorder"
   ],
   "author": "Antigravity",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "msedge-tts": "^2.1.1"
+  }
 }

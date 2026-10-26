@@ -16,6 +16,7 @@ const LISTENING_EXERCISES = [
     "description": "Weekend creative photography course reservation and equipment inquiry.",
     "accent": "en-GB (British English)",
     "voiceGender": "female",
+    "audioUrl": "assets/audio/listening/ex-1.mp3",
     "script": "Good morning, Aperture Studio. How may I help you today?\nHello! I am calling to book a spot for the weekend beginner photography workshop on Saturday, October 14th.\nCertainly! We have three spaces remaining for the morning session starting at nine o'clock. The tuition fee is forty-five pounds.\nWonderful. Do I need to bring my own tripod and zoom lenses?\nWe provide all studio lighting and tripods free of charge, but you should bring your own digital SLR camera with a fully charged battery.\nUnderstood. Please reserve one place under the name Marcus Davies. My contact number is 07700 900542.\nSplendid, Marcus. A confirmation email with the studio map has just been dispatched.",
     "sentences": [
       {
@@ -236,6 +237,7 @@ const LISTENING_EXERCISES = [
     "description": "Lunch table booking for four guests and vegan dietary options inquiry.",
     "accent": "en-GB (British English)",
     "voiceGender": "female",
+    "audioUrl": "assets/audio/listening/ex-2.mp3",
     "script": "Hello, Willow Green Café. How can I assist you?\nHi, I would like to reserve a table for four people this Friday at one o'clock in the afternoon.\nLet me check our table diary. Yes, we have a quiet table by the bay window available. May I take your surname?\nYes, it is Harrison. Also, two of our guests follow a strict vegan diet. Do you offer plant-based lunch dishes?\nAbsolutely! We serve fresh avocado toast, warm lentil soup, and a vegan berry cheesecake every afternoon.\nThat sounds delicious! Is street parking available near the café?\nFree customer parking is located directly behind our garden patio.\nThank you so much, see you on Friday!",
     "sentences": [
       {
@@ -459,6 +461,7 @@ const LISTENING_EXERCISES = [
     "description": "Opening hours, greenhouse admission fees, and botanical conservation rules.",
     "accent": "en-GB (British English)",
     "voiceGender": "female",
+    "audioUrl": "assets/audio/listening/ex-3.mp3",
     "script": "Welcome to the Royal Botanical Gardens. The outdoor park grounds remain open daily from eight in the morning until seven in the evening.\nOur famous glass greenhouse closes one hour earlier, at six o'clock, for daily misting and plant care.\nAdult admission tickets cost twelve euros, while children under twelve enter free of charge.\nVisitors are warmly encouraged to explore the rare orchid pathway and the tropical butterfly pavilion.\nPlease remember that touching flowers or picking botanical samples is strictly prohibited.\nCommercial flash photography is not permitted inside the greenhouse without a registered media permit.\nPicnic blankets may only be placed on the designated southern meadow lawn.\nHave an inspiring visit!",
     "sentences": [
       {
@@ -682,6 +685,7 @@ const LISTENING_EXERCISES = [
     "description": "Airport transit maintenance, replacement express shuttle buses, and gate updates.",
     "accent": "en-GB (British English)",
     "voiceGender": "female",
+    "audioUrl": "assets/audio/listening/ex-4.mp3",
     "script": "Attention all departing passengers at Terminal 3.\nDue to scheduled electrical maintenance on our automated track transit, the inter-terminal train service is temporarily suspended until two o'clock this afternoon.\nComplimentary express shuttle buses are running every six minutes from ground transportation door B.\nPassengers booked on flight BA 418 to Copenhagen should note that your departure gate has been relocated from gate 14 to gate 29 in the satellite concourse.\nBoarding will commence promptly forty minutes prior to departure.\nPlease ensure you keep personal baggage in your sight at all times. Unattended items will be removed and destroyed by airport security patrols.\nCustomer service agents in blue jackets are stationed along the concourse to assist with gate connections.",
     "sentences": [
       {
@@ -896,6 +900,7 @@ const LISTENING_EXERCISES = [
     "description": "Two university students divide research roles for an environmental seminar presentation.",
     "accent": "en-US (American English)",
     "voiceGender": "female",
+    "audioUrl": "assets/audio/listening/ex-5.mp3",
     "script": "Hi Sophia, thanks for meeting. Our environmental seminar presentation is in ten days, and we need to divide the slides.\nAgreed, Liam. We have a twenty-minute slot. I think we should split it into two ten-minute segments.\nGreat idea. I am keen to analyze offshore wind farms in northern Europe, specifically their construction costs and energy yield.\nPerfect. Then I will cover decentralized solar panel installations on residential homes, including battery storage technologies.\nShould we invite the audience to ask questions during the talk?\nProfessor Clark explicitly requested that all questions be held for a five-minute discussion period at the very end.\nUnderstood. Let us draft our slide outline by Thursday and meet in the library cafeteria on Friday afternoon to rehearse.",
     "sentences": [
       {
@@ -1112,6 +1117,7 @@ const LISTENING_EXERCISES = [
     "description": "Graduate student and faculty advisor debate hydraulic pumps and wind resistance in green towers.",
     "accent": "en-GB (British English)",
     "voiceGender": "female",
+    "audioUrl": "assets/audio/listening/ex-6.mp3",
     "script": "Dr. Vance, thank you for reviewing my thesis draft on vertical forest residential towers.\nYou have selected an engaging topic, Marcus. Your thermal insulation models are persuasive, but your hydraulic analysis needs work.\nDo you mean the automated greywater irrigation system for the cantilevered balconies?\nPrecisely. The electric water pumps consume substantial energy on higher floors. You must calculate whether the energy savings from leaf shade compensate for pump power consumption.\nI could incorporate high-efficiency solar pumps powered by rooftop photovoltaic panels to offset that electrical load.\nThat would significantly strengthen your structural feasibility chapter. Also, verify that the selected oak saplings can withstand wind speeds exceeding eighty kilometers per hour at eighty meters altitude.\nI will consult the botanical wind tunnel data before our next advisory meeting on Tuesday.",
     "sentences": [
       {
@@ -1327,6 +1333,7 @@ const LISTENING_EXERCISES = [
     "description": "Colony coordination, figure-eight waggle dance, and hive temperature regulation.",
     "accent": "en-US (American English)",
     "voiceGender": "female",
+    "audioUrl": "assets/audio/listening/ex-7.mp3",
     "script": "In this morning's behavioral biology lecture, we explore how honeybee colonies achieve remarkable coordination without centralized leadership.\nA typical hive contains roughly fifty thousand worker bees, all females.\nWhen a scout bee locates a rich field of wildflowers, she returns to the dark honeycomb and performs what entomologists call the waggle dance.\nThe angle of her figure-eight movement relative to vertical gravity communicates the exact direction of the blossoms relative to the sun.\nFurthermore, the duration of the central waggle signifies the distance: each second of dancing represents roughly one kilometer of flight.\nBack inside the hive, worker bees continuously fan their wings to circulate cool air, keeping the brood nursery at a steady thirty-four degrees Celsius.\nThis collective regulation ensures the survival of developing larvae.",
     "sentences": [
       {
@@ -1543,6 +1550,7 @@ const LISTENING_EXERCISES = [
     "description": "Slow-wave oscillations, hippocampal memory consolidation, and glymphatic clearance.",
     "accent": "en-US (American English)",
     "voiceGender": "female",
+    "audioUrl": "assets/audio/listening/ex-8.mp3",
     "script": "Over the past decade, neuroimaging has radically revised our understanding of non-REM slow-wave sleep.\nFar from being a passive metabolic resting state, stage three deep sleep generates synchronized electrical oscillations below one Hertz across the prefrontal cortex.\nThese slow waves drive a bidirectional dialogue between the temporary storage buffers of the hippocampus and long-term neocortical networks.\nThrough sharp-wave ripples, fragile episodic memories acquired during daytime wakefulness are reactivated and systematically consolidated into stable semantic knowledge.\nSimultaneously, the brain's glymphatic system expands by nearly sixty percent, pumping cerebrospinal fluid along paravascular channels to flush out toxic metabolites, notably beta-amyloid proteins.\nChronic disruption of slow-wave sleep compromises synaptic pruning, severely impairing hippocampal plasticity and daytime cognitive flexibility.",
     "sentences": [
       {
@@ -1753,6 +1761,7 @@ const LISTENING_EXERCISES = [
     "description": "Colleagues debate daily commute time, kitchen table isolation, and creative in-person synergy.",
     "accent": "en-GB (British English)",
     "voiceGender": "female",
+    "audioUrl": "assets/audio/listening/ex-9.mp3",
     "script": "Hannah, our management announced we can either stay completely remote or return to the downtown office three days a week. I am definitely staying remote.\nReally, David? I find working from my kitchen table quite isolating. In the office, grabbing a coffee together often sparks our best marketing ideas.\nI understand that, but eliminating my forty-minute train commute saves me nearly seven hours every week. I use that reclaimed time to jog and cook fresh meals.\nThat is a genuine benefit. However, training junior apprentices over video calls is frustrating. They learn much faster watching experienced designers collaborate in person.\nTrue, mentorship is tougher online. Perhaps a hybrid schedule with two office days is a balanced compromise.\nI would support that enthusiastically!",
     "sentences": [
       {
@@ -1965,6 +1974,7 @@ const LISTENING_EXERCISES = [
     "description": "Automotive journalists assess winter battery degradation, cabin heat pumps, and rural charging.",
     "accent": "en-US (American English)",
     "voiceGender": "female",
+    "audioUrl": "assets/audio/listening/ex-10.mp3",
     "script": "Robert, our cold-weather road test across northern Sweden revealed substantial battery drain. At minus fifteen degrees, driving range dropped thirty-five percent.\nThat is undeniable, Elena, but modern electric vehicles with heat pump thermal management fared significantly better than older resistive heating models.\nTrue, yet the charging speeds at roadside stations plummeted. Cold battery chemistry slows lithium-ion intake, doubling charging durations from twenty to forty-five minutes.\nManufacturers are addressing that by integrating automated pre-conditioning, warming the battery pack when a navigation destination is set to a supercharger.\nIn urban settings that works, but in rural sub-Arctic regions with sixty miles between chargers, battery uncertainty creates acute driver anxiety.\nI agree rural infrastructure requires massive public subsidies, but electric drivetrains still offer superior traction control on packed snow compared to petrol cars.",
     "sentences": [
       {
@@ -2177,6 +2187,7 @@ const LISTENING_EXERCISES = [
     "description": "A missed daytime express train turns into an unforgettable overnight journey through the Highlands.",
     "accent": "en-GB (British English)",
     "voiceGender": "female",
+    "audioUrl": "assets/audio/listening/ex-11.mp3",
     "script": "Last November, heavy traffic on the M1 motorway caused me to miss the final afternoon express train to Edinburgh by just seven minutes.\nDisappointed and exhausted, I entered King's Cross station, wondering whether to book an expensive airport hotel.\nThe ticket clerk smiled warmly and suggested the Caledonian Sleeper train departing at eleven-thirty at night.\nI booked a cozy single cabin, boarded the train, and fell asleep to the rhythmic clatter of steel rails.\nWhen I awoke at dawn and pulled back the cabin curtain, golden sunlight was illuminating the misty purple hills of the Scottish Highlands.\nThe dining car steward served fresh hot porridge and black tea.\nMissing my earlier train turned out to be the most serene travel experience of my life.",
     "sentences": [
       {
@@ -2392,6 +2403,7 @@ const LISTENING_EXERCISES = [
     "description": "A sudden mountain squall, following sheep bells through fog, and sanctuary in a shepherd's cabin.",
     "accent": "en-GB (British English)",
     "voiceGender": "female",
+    "audioUrl": "assets/audio/listening/ex-12.mp3",
     "script": "Three years ago, while solo trekking along the Swiss Alpine ridge, clear morning skies deceived me.\nBy two in the afternoon, icy winds swept over the pass, blanketing the rocky trail in dense white fog.\nMy mobile phone had zero reception, and every boulder looked identical.\nAs daylight began to fade and panic threatened to take over, I paused and listened intently.\nThrough the howling gust, the faint, melodic clinking of bronze sheep bells reached my ears.\nTrusting my instincts, I navigated carefully towards the sound down a steep grassy slope.\nTen minutes later, a weathered wooden cabin emerged through the mist.\nAn elderly shepherd named Bruno opened the heavy pine door, welcomed me inside his warm kitchen, and handed me wool socks and a bowl of steaming vegetable broth.\nThat night beside his crackling hearth taught me that nature's gentlest sounds can save lives.",
     "sentences": [
       {

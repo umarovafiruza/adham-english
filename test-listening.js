@@ -1,5 +1,9 @@
+const fs = require('fs');
+const path = require('path');
+const http = require('http');
 const { LISTENING_EXERCISES, LISTENING_PARTS, LISTENING_LEVELS } = require('./js/listening/data.js');
 const { QuizEngine } = require('./js/listening/quiz-engine.js');
+const { AudioPlayerEngine } = require('./js/listening/audio-player.js');
 
 console.log("=== PROFESSIONAL LISTENING PRACTICE AUTOMATED TEST ===");
 console.log("Parts count:", LISTENING_PARTS.length);
@@ -12,7 +16,28 @@ if (LISTENING_EXERCISES.length < 12) {
 }
 
 const quiz = new QuizEngine();
+const player = new AudioPlayerEngine();
 let totalQuestions = 0;
+
+// Test Audio Player initialization
+if (typeof player.loadExercise !== 'function' || typeof player.seekToPercent !== 'function') {
+  console.error("FAIL: AudioPlayerEngine interface check failed.");
+  process.exit(1);
+}
+console.log("OK: AudioPlayerEngine loaded successfully.");
+
+// Test Voice Previews on disk
+const previewUsPath = path.join(__dirname, 'assets/audio/listening/preview-us.mp3');
+const previewUkPath = path.join(__dirname, 'assets/audio/listening/preview-uk.mp3');
+if (!fs.existsSync(previewUsPath) || fs.statSync(previewUsPath).size < 1000) {
+  console.error("FAIL: preview-us.mp3 missing or invalid.");
+  process.exit(1);
+}
+if (!fs.existsSync(previewUkPath) || fs.statSync(previewUkPath).size < 1000) {
+  console.error("FAIL: preview-uk.mp3 missing or invalid.");
+  process.exit(1);
+}
+console.log("OK: Voice preview audio assets verified on disk.");
 
 LISTENING_EXERCISES.forEach((ex, exIdx) => {
   console.log(`[Exercise ${exIdx + 1}/12] ${ex.title} (${ex.cefr} - ${ex.part})`);
@@ -23,6 +48,29 @@ LISTENING_EXERCISES.forEach((ex, exIdx) => {
     process.exit(1);
   }
   totalQuestions += ex.questions.length;
+
+  // Check audioUrl and file existence
+  if (!ex.audioUrl) {
+    console.error(`FAIL: Exercise ${ex.id} is missing audioUrl property.`);
+    process.exit(1);
+  }
+  const audioFilePath = path.join(__dirname, ex.audioUrl);
+  if (!fs.existsSync(audioFilePath)) {
+    console.error(`FAIL: Audio file not found on disk: ${audioFilePath}`);
+    process.exit(1);
+  }
+  const fileSize = fs.statSync(audioFilePath).size;
+  if (fileSize < 10000) {
+    console.error(`FAIL: Audio file ${audioFilePath} is abnormally small (${fileSize} bytes).`);
+    process.exit(1);
+  }
+
+  // Test player load
+  player.loadExercise(ex);
+  if (player.currentExercise.id !== ex.id) {
+    console.error(`FAIL: Player load failed for ${ex.id}`);
+    process.exit(1);
+  }
 
   // Test 1: Full correct answers
   const correctAnswers = {};
@@ -81,4 +129,4 @@ LISTENING_EXERCISES.forEach((ex, exIdx) => {
   });
 });
 
-console.log(`\nSUCCESS: All ${LISTENING_EXERCISES.length} exercises and all ${totalQuestions} questions passed 100% validation!`);
+console.log(`\nSUCCESS: All ${LISTENING_EXERCISES.length} exercises, all ${totalQuestions} questions, and all neural audio files passed 100% validation!`);

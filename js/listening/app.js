@@ -42,6 +42,8 @@
     partFiltersContainer: document.getElementById("partFiltersContainer"),
     levelFiltersContainer: document.getElementById("levelFiltersContainer"),
     exercisesGrid: document.getElementById("exercisesGrid"),
+    previewVoiceUsBtn: document.getElementById("previewVoiceUsBtn"),
+    previewVoiceUkBtn: document.getElementById("previewVoiceUkBtn"),
 
     // Exercise Top Bar
     exerciseBackBtn: document.getElementById("exerciseBackBtn"),
@@ -236,9 +238,82 @@
   }
 
   /* ==========================================================================
+     2.1 VOICE PREVIEW & CATALOG CONTROLS
+     ========================================================================== */
+  let activePreviewAudio = null;
+  let activePreviewBtn = null;
+
+  function stopVoicePreview() {
+    if (activePreviewAudio) {
+      activePreviewAudio.pause();
+      activePreviewAudio.currentTime = 0;
+      activePreviewAudio = null;
+    }
+    if (activePreviewBtn) {
+      activePreviewBtn.classList.remove("active");
+      if (activePreviewBtn.id === "previewVoiceUsBtn") {
+        activePreviewBtn.textContent = "▶ US Accent (Jenny)";
+      } else if (activePreviewBtn.id === "previewVoiceUkBtn") {
+        activePreviewBtn.textContent = "▶ UK Accent (Sonia)";
+      }
+      activePreviewBtn = null;
+    }
+  }
+
+  function playVoicePreview(type, btn) {
+    if (activePreviewBtn === btn) {
+      stopVoicePreview();
+      return;
+    }
+
+    player.stop();
+    stopVoicePreview();
+
+    const audioUrl = type === "us"
+      ? "assets/audio/listening/preview-us.mp3"
+      : "assets/audio/listening/preview-uk.mp3";
+
+    activePreviewBtn = btn;
+    btn.classList.add("active");
+    btn.textContent = "⏸ Stop";
+
+    activePreviewAudio = new Audio(audioUrl);
+    activePreviewAudio.volume = player.volume;
+
+    activePreviewAudio.addEventListener("ended", () => {
+      stopVoicePreview();
+    });
+
+    activePreviewAudio.addEventListener("error", (e) => {
+      console.warn("Preview audio load error:", e);
+      stopVoicePreview();
+    });
+
+    activePreviewAudio.play().catch(err => {
+      console.warn("Audio preview autoplay blocked:", err);
+      stopVoicePreview();
+    });
+  }
+
+  function setupCatalogEventListeners() {
+    if (elements.previewVoiceUsBtn) {
+      elements.previewVoiceUsBtn.addEventListener("click", () => {
+        playVoicePreview("us", elements.previewVoiceUsBtn);
+      });
+    }
+
+    if (elements.previewVoiceUkBtn) {
+      elements.previewVoiceUkBtn.addEventListener("click", () => {
+        playVoicePreview("uk", elements.previewVoiceUkBtn);
+      });
+    }
+  }
+
+  /* ==========================================================================
      3. EXERCISE SESSION LIFECYCLE
      ========================================================================== */
   function startExercise(exercise) {
+    stopVoicePreview();
     state.activeExercise = exercise;
     state.currentQuestionIndex = 0;
     state.userAnswers = {};
